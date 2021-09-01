@@ -7,7 +7,7 @@ use bellman::groth16::{
 use bellman::Circuit;
 use bls12_381::{Scalar, Bls12};
 use circ::front::datalog::{self, Datalog};
-use circ::front::zokrates::{self, Mode, Zokrates};
+use circ::front::zsharp::{self, Mode, ZSharpFE};
 use circ::front::FrontEnd;
 use circ::ir::{opt::{opt, Opt}, term::extras::Letified};
 use circ::target::aby::output::write_aby_exec;
@@ -89,7 +89,7 @@ enum Backend {
 arg_enum! {
     #[derive(PartialEq, Debug)]
     enum Language {
-        Zokrates,
+        Zsharp,
         Datalog,
         Auto,
     }
@@ -97,7 +97,7 @@ arg_enum! {
 
 #[derive(PartialEq, Debug)]
 enum DeterminedLanguage {
-    Zokrates,
+    Zsharp,
     Datalog,
 }
 
@@ -122,11 +122,11 @@ arg_enum! {
 fn determine_language(l: &Language, input_path: &PathBuf) -> DeterminedLanguage {
     match l {
         &Language::Datalog => DeterminedLanguage::Datalog,
-        &Language::Zokrates => DeterminedLanguage::Zokrates,
+        &Language::Zsharp => DeterminedLanguage::Zsharp,
         &Language::Auto =>  {
             let p = input_path.to_str().unwrap();
             if p.ends_with(".zok") {
-                DeterminedLanguage::Zokrates
+                DeterminedLanguage::Zsharp
             } else if p.ends_with(".pl") {
                 DeterminedLanguage::Datalog
             } else {
@@ -153,13 +153,13 @@ fn main() {
     };
     let language = determine_language(&options.frontend.language, &options.path);
     let cs = match language {
-        DeterminedLanguage::Zokrates => {
-            let inputs = zokrates::Inputs {
+        DeterminedLanguage::Zsharp => {
+            let inputs = zsharp::Inputs {
                 file: options.path,
                 inputs: options.frontend.inputs,
                 mode: mode.clone(),
             };
-            Zokrates::gen(inputs)
+            ZSharpFE::gen(inputs)
         }
         DeterminedLanguage::Datalog => {
             let inputs = datalog::Inputs {
@@ -199,7 +199,7 @@ fn main() {
     match options.backend {
         Backend::R1cs { action, proof, prover_key, verifier_key, .. } => {
             println!("Converting to r1cs");
-            let r1cs = to_r1cs(cs, circ::front::zokrates::ZOKRATES_MODULUS.clone());
+            let r1cs = to_r1cs(cs, circ::front::zsharp::ZSHARP_MODULUS.clone());
             println!("Pre-opt R1cs size: {}", r1cs.constraints().len());
             let r1cs = reduce_linearities(r1cs);
             match action {

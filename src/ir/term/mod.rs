@@ -933,11 +933,11 @@ impl TermData {
     }
     /// Is this a variable?
     pub fn is_var(&self) -> bool {
-        if let Op::Var(..) = &self.op {
-            true
-        } else {
-            false
-        }
+        matches!(&self.op, Op::Var(..))
+    }
+    /// Is this a constant?
+    pub fn is_const(&self) -> bool {
+        matches!(&self.op, Op::Const(_))
     }
 }
 
