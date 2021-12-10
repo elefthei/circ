@@ -54,7 +54,7 @@ impl ToABY {
 
     fn get_var_name(t: Term, b: bool) -> String {
         match &t.op {
-            Op::Var(name, _) =>  if b { name.to_string().clone().replace(".", "_") } else { name.to_string() }, 
+            Op::Var(name, _) =>  if b { name.to_string().clone().replace(".", "_") } else { name.to_string() },
             _ => panic!("Term {} is not of type Var", t),
         }
     }
@@ -80,7 +80,7 @@ impl ToABY {
                 panic!("Invalid variable name: {}", full_name);
             }
             name += &("_".to_owned() + &index[index.len() - 1].to_string());
-        } 
+        }
         name
     }
 
@@ -184,7 +184,7 @@ impl ToABY {
 
         // Initialize Server inputs
         write_line_to_file(&self.setup_fname, &String::from("if (role == SERVER) {\n"));
-        // TODO: add in gates based on type / number of inputs 
+        // TODO: add in gates based on type / number of inputs
         for t in server_inputs.iter() {
             write_line_to_file(&self.setup_fname, &self.add_in_gate(t.clone(), "SERVER".to_string()));
         }
@@ -284,7 +284,7 @@ impl ToABY {
             Op::Var(name, Sort::Bool) => {
                 if !self.inputs.contains_key(&t) {
                     self.inputs
-                        .insert(t.clone(), *self.md.inputs.get(name).unwrap());
+                        .insert(t.clone(), *self.md.input_vis.get(name).unwrap());
                 }
                 if !self.cache.contains_key(&t) {
                     self.cache
@@ -298,7 +298,7 @@ impl ToABY {
                     "share* {} = {}->PutCONSGate((uint64_t){}, (uint32_t){});\n",
                     share,
                     s_circ,
-                    *b as isize, 
+                    *b as isize,
                     BOOLEAN_BITLEN
                 );
                 write_line_to_file(&self.circuit_fname, &s);
@@ -457,7 +457,7 @@ impl ToABY {
             Op::Var(name, Sort::BitVector(_)) => {
                 if !self.inputs.contains_key(&t) {
                     self.inputs
-                        .insert(t.clone(), *self.md.inputs.get(name).unwrap());
+                        .insert(t.clone(), *self.md.input_vis.get(name).unwrap());
                 }
                 if !self.cache.contains_key(&t) {
                     self.cache
@@ -531,7 +531,7 @@ impl ToABY {
                     b_conv
                 );
                 write_line_to_file(&self.circuit_fname, &s);
-                
+
                 self.cache.insert(
                     t.clone(),
                     EmbeddedTerm::Bv(share),
@@ -589,7 +589,7 @@ impl ToABY {
     }
 
     /// Given a Circuit `circ`, wrap `circ` in an OUT gate to extract the value of
-    /// the circuit to a share      
+    /// the circuit to a share
     ///
     /// Return a String of the resulting Circuit
     fn format_output_circuit(&self, t: Term) -> String {
@@ -647,4 +647,6 @@ pub fn to_aby(ir: Computation, path_buf: &PathBuf, lang: &String) {
     // are the input parameters for the ABY circuit.
     // Call init_inputs here after self.inputs is populated.
     converter.init_inputs();
+
+    converter.aby
 }
