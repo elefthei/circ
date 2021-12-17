@@ -278,10 +278,10 @@ pub fn check_sat(t: &Term) -> bool {
     solver.check_sat().unwrap()
 }
 
-/// Get a satisfying assignment for `t`, assuming it is SAT.
-pub fn find_model(t: &Term) -> Option<HashMap<String, Value>> {
+fn get_model_solver(t: &Term, inc: bool) -> Solver<Parser> {
     let mut conf = SmtConf::default_cvc4();
     conf.models();
+    conf.set_incremental(inc);
     let mut solver = Solver::new(conf, Parser).unwrap();
     //solver.path_tee("solver_com").unwrap();
     for c in PostOrderIter::new(t.clone()) {
@@ -290,6 +290,12 @@ pub fn find_model(t: &Term) -> Option<HashMap<String, Value>> {
         }
     }
     assert!(check(t) == Sort::Bool);
+    solver
+}
+
+/// Get a satisfying assignment for `t`, assuming it is SAT.
+pub fn find_model(t: &Term) -> Option<HashMap<String, Value>> {
+    let mut solver = get_model_solver(t, false);
     solver.assert(&**t).unwrap();
     if solver.check_sat().unwrap() {
         Some(
@@ -302,6 +308,36 @@ pub fn find_model(t: &Term) -> Option<HashMap<String, Value>> {
         )
     } else {
         None
+    }
+}
+
+/// Get a unique satisfying assignment for `t`, assuming it is SAT.
+pub fn find_unique_model(t: &Term, uniqs: Vec<String>) -> Option<HashMap<String, Value>> {
+    let mut solver = get_model_solver(t, true);
+    solver.assert(&**t).unwrap();
+    // first, get the result
+    let model: HashMap<String, Value> = if solver.check_sat().unwrap() {
+        solver.get_model().unwrap().into_iter().map(|(id, _, _, v)| (id, v)).collect()
+    } else {
+        return None;
+    };
+    // now, assert that any value in uniq is not the value assigned and check unsat
+    match uniqs.into_iter()
+        .flat_map(|n| model.get(&n)
+            .map(|v| term![EQ; term![Op::Var(n, v.sort())], term![Op::Const(v.clone())]])
+        )
+        .reduce(|l,r| term![AND; l, r])
+        .map(|t| term![NOT; t])
+    {
+        None => Some(model),
+        Some(ast) => {
+            solver.push(1).unwrap();
+            solver.assert(&*ast).unwrap();
+            match solver.check_sat().unwrap() {
+                true => None,
+                false => Some(model),
+            }
+        }
     }
 }
 
