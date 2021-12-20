@@ -15,7 +15,7 @@ struct Alloc {
     val_width: usize,
     _cur_ver: usize,
     size: usize,
-    cur_term: Term, 
+    cur_term: Term,
 }
 
 impl Alloc {
@@ -86,27 +86,25 @@ impl MemManager {
     /// Allocate a new stack array, equal to `array`.
     pub fn allocate(&mut self, array: Term) -> AllocId {
         let s = check(&array);
-        if let Sort::Array(box Sort::BitVector(addr_width), box Sort::BitVector(val_width), size) =
-            s
-        {
-            let id = self.take_next_id();
-            let alloc = Alloc::new(id, addr_width, val_width, size, array);
-
-            // let v = alloc.var().clone();
-            // TODO: add computations to ctx without assert
-            // if let Op::Var(n, _) = &v.op {
-            //     self.cs.borrow_mut().eval_and_save(&n, &array);
-            // } else {
-            //     unreachable!()
-            // }
-            // self.assert(term![Op::Eq; v, array]);
-            // self.cs.borrow_mut().outputs.push(term![Op::Eq; v, array]);
-
-            // output some term 
-            // store term with name somewhere in context? 
-
-            self.allocs.insert(id, alloc);
-            id
+        if let Sort::Array(k_s, v_s, size) = &s {
+            match (&**k_s, &**v_s) {
+                (Sort::BitVector(addr_width), Sort::BitVector(val_width)) => {
+                    let id = self.take_next_id();
+                    let alloc = Alloc::new(id, *addr_width, *val_width, *size);
+                    let v = alloc.var().clone();
+                    if let Op::Var(n, _) = &v.op {
+                        self.cs.borrow_mut().eval_and_save(&n, &array);
+                    } else {
+                        unreachable!()
+                    }
+                    self.assert(term![Op::Eq; v, array]);
+                    self.allocs.insert(id, alloc);
+                    id
+                }
+                _ => {
+                    panic!("Cannot allocate array of sort: {}", s)
+                }
+            }
         } else {
             panic!("Cannot allocate array of sort: {}", s)
         }

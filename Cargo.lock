@@ -228,7 +228,6 @@ dependencies = [
  "curve25519-dalek",
  "env_logger",
  "ff",
- "fnv",
  "from-pest",
  "fxhash",
  "gmp-mpfr-sys",
