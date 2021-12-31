@@ -503,8 +503,8 @@ pub fn not(a: T) -> Result<T, String> {
 }
 
 
-pub fn const_bool_ref(a: &T) -> Result<bool, String> {
-    let s = match a {
+pub fn const_bool(a: T) -> Option<bool> {
+    match &a {
         T::Bool(b) => {
             let folded = constant_fold(b);
             match folded.op {
@@ -513,11 +513,10 @@ pub fn const_bool_ref(a: &T) -> Result<bool, String> {
             }
         }
         _ => None,
-    };
-    s.ok_or_else(|| format!("{} is not a constant bool", a))
+    }
 }
 
-pub fn const_int_ref(a: &T) -> Result<Integer, String> {
+pub fn const_int(a: T) -> Result<Integer, String> {
     let s = match &a {
         T::Field(b) => {
             let folded = constant_fold(b);
@@ -536,10 +535,6 @@ pub fn const_int_ref(a: &T) -> Result<Integer, String> {
         _ => None,
     };
     s.ok_or_else(|| format!("{} is not a constant integer", a))
-}
-
-pub fn const_int(a: T) -> Result<Integer, String> {
-    const_int_ref(&a)
 }
 
 pub fn const_val(a: T) -> Result<T, String> {
