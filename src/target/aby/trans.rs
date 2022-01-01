@@ -212,9 +212,23 @@ impl ToABY {
     }
 
     /// Return constant gate evaluating to 1
-    // TODO: const should not be hardcoded to acirc
-    fn one(s_type: &String) -> String {
-        format!("{}->PutCONSGate((uint64_t)1, (uint32_t)1)", s_type)
+    fn one() -> String {
+        format!("bcirc->PutCONSGate((uint64_t)1, (uint32_t)1)")
+    }
+
+    fn remove_cons_gate(&self, circ: String) -> String {
+        if circ.contains("PutCONSGate(") {
+            circ.split("PutCONSGate(")
+                .last()
+                .unwrap_or("")
+                .split(",")
+                .next()
+                .unwrap_or("")
+                .to_string()
+        } else {
+            panic!("PutCONSGate not found in: {}", circ)
+        }
+>>>>>>> f2744e0... IR-based Zokrates front-end (#33)
     }
 
     fn embed_eq(&mut self, t: Term, a: Term, b: Term) {
@@ -573,14 +587,19 @@ impl ToABY {
                             b_conv,
                         )
                     }
-                };
-                write_line_to_file(&self.circuit_fname, &s);
-                self.cache.insert(
-                    t.clone(),
-                    EmbeddedTerm::Bv(share),
-                );
+                    BvBinOp::Ashr => {
+                        let b_val = self.remove_cons_gate(b_conv);
+                        self.cache.insert(
+                            t.clone(),
+                            EmbeddedTerm::Bv(format!(
+                                "arithmetic_right_shift({}, {}, {})",
+                                s_circ, a_conv, b_val
+                            )),
+                        );
+                    }
+                    _ => panic!("Invalid bv-op in BvBinOp: {:?}", o),
+                }
             }
-            // TODO
             Op::BvExtract(_start, _end) => {}
             _ => panic!("Non-field in embed_bv: {:?}", t),
         }

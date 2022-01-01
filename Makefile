@@ -1,4 +1,4 @@
-all: build test 
+all: build test
 
 build: init
 	cargo build --release --example circ && \
@@ -38,9 +38,12 @@ z_aby:
 
 clean:
 	# remove all generated files
-	touch ./third_party/ABY/build && rm -r -- ./third_party/ABY/build 
-	touch ./third_party/ABY/src/examples/2pc_* && rm -r -- ./third_party/ABY/src/examples/2pc_* 
-	sed '/add_subdirectory.*2pc.*/d' -i ./third_party/ABY/src/examples/CMakeLists.txt 
+	touch ./third_party/ABY/build && rm -r -- ./third_party/ABY/build
+	touch ./third_party/ABY/src/examples/2pc_* && rm -r -- ./third_party/ABY/src/examples/2pc_*
+	sed '/add_subdirectory.*2pc.*/d' -i ./third_party/ABY/src/examples/CMakeLists.txt
 	rm -r ./third_party/ABY/src/examples/2pc_*.txt
 	rm -r scripts/aby_tests/__pycache__*
 	rm -rf P V pi perf.data perf.data.old flamegraph.svg
+
+format:
+	cargo fmt --all

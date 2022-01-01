@@ -122,7 +122,13 @@ impl MemManager {
     ///
     /// Returns a (concrete) allocation identifier which can be used to access this allocation.
     pub fn zero_allocate(&mut self, size: usize, addr_width: usize, val_width: usize) -> AllocId {
-        self.allocate(term![Op::ConstArray(Sort::BitVector(addr_width), size); leaf_term(Op::Const(Value::BitVector(BitVector::zeros(val_width))))])
+        let array = Value::Array(Array::new(
+            Sort::BitVector(addr_width),
+            Box::new(Value::BitVector(BitVector::zeros(val_width))),
+            BTreeMap::new(),
+            size,
+        ));
+        self.allocate(leaf_term(Op::Const(array)))
     }
 
     /// Load the value of index `offset` from the allocation `id`.

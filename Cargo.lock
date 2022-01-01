@@ -234,6 +234,7 @@ dependencies = [
  "good_lp",
  "hashconsing",
  "ieee754",
+ "itertools 0.10.3",
  "lang-c",
  "lazy_static",
  "log",

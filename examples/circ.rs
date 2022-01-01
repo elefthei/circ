@@ -208,23 +208,31 @@ fn main() {
         }
     };
     let cs = match mode {
-        Mode::Opt => opt(cs, vec![Opt::ConstantFold]),
+        Mode::Opt => opt(cs, vec![Opt::ScalarizeVars, Opt::ConstantFold]),
         Mode::Mpc(_) => opt(
             cs,
-            vec![Opt::Sha, Opt::ConstantFold, Opt::Mem, Opt::ConstantFold],
+            vec![Opt::ScalarizeVars],
+            // vec![Opt::Sha, Opt::ConstantFold, Opt::Mem, Opt::ConstantFold],
         ),
         Mode::Proof | Mode::ProofOfHighValue(_) => opt(
             cs,
             vec![
+                Opt::ScalarizeVars,
                 Opt::Flatten,
                 Opt::Sha,
                 Opt::ConstantFold,
                 Opt::Flatten,
-                //Opt::FlattenAssertions,
                 Opt::Inline,
-                Opt::Mem,
+                // Tuples must be eliminated before oblivious array elim
+                Opt::Tuple,
+                Opt::ConstantFold,
+                Opt::Obliv,
+                // The obliv elim pass produces more tuples, that must be eliminated
+                Opt::Tuple,
+                Opt::LinearScan,
+                // The linear scan pass produces more tuples, that must be eliminated
+                Opt::Tuple,
                 Opt::Flatten,
-                //Opt::FlattenAssertions,
                 Opt::ConstantFold,
                 Opt::Inline,
             ],
@@ -244,16 +252,17 @@ fn main() {
             println!("Converting to r1cs");
             let r1cs = to_r1cs(cs, circ::target::r1cs::spartan::SPARTAN_MODULUS.clone());
             println!("Pre-opt R1cs size: {}", r1cs.constraints().len());
-            // LEF: Why this is commented out?
+
+            // LEF: Why is this commented out?
             // let r1cs = reduce_linearities(r1cs);
-	          //println!("Post-opt R1cs size: {}", r1cs.constraints().len());
+	          println!("Post-opt R1cs size: {}", r1cs.constraints().len());
 	          let num_r1cs = r1cs.constraints().len().clone();
 
             match action {
                 ProofAction::Count => {
                     println!("Final R1cs size: {}", r1cs.constraints().len());
                 }
-                // LEF: Shouldn't Spartan be a Backend instead of ProofAction?
+                // LEF: Should Spartan be a Backend instead of ProofAction?
 		            ProofAction::Spartan => {
 		                println!("Converting R1CS to Spartan");
 
@@ -298,10 +307,9 @@ fn main() {
                         comm_len,
                         proof_len);
 
-                }
-
                 ProofAction::Prove => {
                     println!("Proving");
+                    r1cs.check_all();
                     let rng = &mut rand::thread_rng();
                     let mut pk_file = File::open(prover_key).unwrap();
                     let pk = Parameters::<Bls12>::read(&mut pk_file, false).unwrap();
