@@ -47,3 +47,6 @@ clean:
 
 format:
 	cargo fmt --all
+
+lint:
+	cargo clippy

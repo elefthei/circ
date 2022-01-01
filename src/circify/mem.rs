@@ -93,7 +93,7 @@ impl MemManager {
                     let alloc = Alloc::new(id, *addr_width, *val_width, *size);
                     let v = alloc.var().clone();
                     if let Op::Var(n, _) = &v.op {
-                        self.cs.borrow_mut().eval_and_save(&n, &array);
+                        self.cs.borrow_mut().eval_and_save(n, &array);
                     } else {
                         unreachable!()
                     }
@@ -143,21 +143,15 @@ impl MemManager {
         let alloc = self.allocs.get_mut(&id).expect("Missing allocation");
         assert_eq!(alloc.addr_width, check(&offset).as_bv());
         assert_eq!(alloc.val_width, check(&val).as_bv());
-        let old = alloc.cur_term.clone();
-        let new = term![Op::Store; alloc.var().clone(), offset.clone(), val];
-        let ite_store = term![Op::Ite; cond, new, old];
-        alloc.cur_term = ite_store;
-        // alloc.next_var();
-        // let v = alloc.var().clone();
-
-        // TODO: add computations to ctx without assert
-        // if let Op::Var(n, _) = &v.op {
-        //     self.cs.borrow_mut().eval_and_save(&n, &new);
-        // } else {
-        //     unreachable!()
-        // }
-        // self.assert(term![Op::Eq; v, new]);
-        // self.cs.borrow_mut().outputs.push(new)
+        let new = term![Op::Store; alloc.var().clone(), offset, val];
+        alloc.next_var();
+        let v = alloc.var().clone();
+        if let Op::Var(n, _) = &v.op {
+            self.cs.borrow_mut().eval_and_save(n, &new);
+        } else {
+            unreachable!()
+        }
+        self.assert(term![Op::Eq; v, new]);
     }
 
     /// Is `offset` in bounds for the allocation `id`?
