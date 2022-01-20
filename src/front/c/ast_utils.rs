@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 use crate::front::c::Expression::Identifier;
 use crate::front::c::types::Ty;
+=======
+use crate::front::c::types::Ty;
+use crate::front::c::Expression::Identifier;
+>>>>>>> 75572c6... C Frontend (#22)
 use lang_c::ast::*;
 use lang_c::span::Node;
 use std::fmt::{self, Display, Formatter};
@@ -17,8 +22,12 @@ pub struct DeclInfo {
 }
 
 pub struct ConstIteration {
+<<<<<<< HEAD
     pub name: String,
     pub val: i64,
+=======
+    pub val: i32,
+>>>>>>> 75572c6... C Frontend (#22)
 }
 
 impl Display for FnInfo {
@@ -42,11 +51,16 @@ pub fn name_from_ident(ident: &Expression) -> String {
     match ident {
         Identifier(i) => i.node.name.clone(),
         //TODO: make this Option
+<<<<<<< HEAD
         _ => "".to_string(), 
+=======
+        _ => "".to_string(),
+>>>>>>> 75572c6... C Frontend (#22)
     }
 }
 
 pub fn d_type_(ds: Vec<Node<DeclarationSpecifier>>) -> Option<Ty> {
+<<<<<<< HEAD
     assert!(ds.len() > 0);
     let res: Vec<Option<Ty>> = ds.iter().map(|d|
         match &d.node {
@@ -65,6 +79,28 @@ pub fn s_type_(ss: Vec<Node<SpecifierQualifier>>) -> Option<Ty> {
             _ => unimplemented!("Unimplemented specifier type: {:#?}", s)
         }
     ).collect();
+=======
+    assert!(!ds.is_empty());
+    let res: Vec<Option<Ty>> = ds
+        .iter()
+        .map(|d| match &d.node {
+            DeclarationSpecifier::TypeSpecifier(t) => type_(t.node.clone()),
+            _ => unimplemented!("Unimplemented declaration type: {:#?}", d),
+        })
+        .collect();
+    compress_type(res)
+}
+
+pub fn s_type_(ss: Vec<Node<SpecifierQualifier>>) -> Option<Ty> {
+    assert!(!ss.is_empty());
+    let res: Vec<Option<Ty>> = ss
+        .iter()
+        .map(|s| match &s.node {
+            SpecifierQualifier::TypeSpecifier(t) => type_(t.node.clone()),
+            _ => unimplemented!("Unimplemented specifier type: {:#?}", s),
+        })
+        .collect();
+>>>>>>> 75572c6... C Frontend (#22)
     compress_type(res)
 }
 
@@ -87,7 +123,11 @@ fn compress_type(ts: Vec<Option<Ty>>) -> Option<Ty> {
                         bit_len += *w;
                     }
                 }
+<<<<<<< HEAD
                 _ => unimplemented!("Current type not supported: {:#?}", ts)
+=======
+                _ => unimplemented!("Current type not supported: {:#?}", ts),
+>>>>>>> 75572c6... C Frontend (#22)
             }
         }
         Some(Ty::Int(signed, bit_len))
@@ -96,11 +136,18 @@ fn compress_type(ts: Vec<Option<Ty>>) -> Option<Ty> {
 
 fn type_(t: TypeSpecifier) -> Option<Ty> {
     return match t {
+<<<<<<< HEAD
         TypeSpecifier::Int => Some(Ty::Int(true, 64)),
         TypeSpecifier::Unsigned => Some(Ty::Int(false, 64)), // Some(Ty::Int(false, 32)),
         TypeSpecifier::Bool => Some(Ty::Bool),
         TypeSpecifier::Long => Some(Ty::Int(true, 64)),
  	TypeSpecifier::Void => None,
+=======
+        TypeSpecifier::Int => Some(Ty::Int(true, 32)),
+        TypeSpecifier::Unsigned => Some(Ty::Int(false, 32)), // Some(Ty::Int(false, 32)),
+        TypeSpecifier::Bool => Some(Ty::Bool),
+        TypeSpecifier::Void => None,
+>>>>>>> 75572c6... C Frontend (#22)
         _ => unimplemented!("Type {:#?} not implemented yet.", t),
     };
 }
@@ -111,7 +158,11 @@ pub fn get_decl_info(decl: Declaration) -> DeclInfo {
     assert!(decl.declarators.len() == 1);
     let decls = decl.declarators.first().unwrap().node.clone();
     let name = name_from_decl(&decls.declarator.node);
+<<<<<<< HEAD
     DeclInfo { name: name, ty: ty }
+=======
+    DeclInfo { name, ty }
+>>>>>>> 75572c6... C Frontend (#22)
 }
 
 pub fn get_fn_info(fn_def: &FunctionDefinition) -> FnInfo {
@@ -124,7 +175,11 @@ pub fn get_fn_info(fn_def: &FunctionDefinition) -> FnInfo {
         name,
         ret_ty,
         args: args.to_vec(),
+<<<<<<< HEAD
         body: body,
+=======
+        body,
+>>>>>>> 75572c6... C Frontend (#22)
     }
 }
 
@@ -156,4 +211,7 @@ fn args_from_func(fn_def: &FunctionDefinition) -> Option<Vec<ParameterDeclaratio
 fn body_from_func(fn_def: &FunctionDefinition) -> Statement {
     fn_def.statement.node.clone()
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 75572c6... C Frontend (#22)

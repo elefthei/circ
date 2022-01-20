@@ -1,5 +1,6 @@
 int main(__attribute__((private(0))) int a, __attribute__((private(1))) int b) { 
    int c = a * b;
+<<<<<<< HEAD
    // c = a + b;
    // for (int i = 0; i < 10000; i++) {
    //    c = c * a;
@@ -18,3 +19,10 @@ int main(__attribute__((private(0))) int a, __attribute__((private(1))) int b) {
 // 0.14112472534179688
 // 0.16500568389892578
 // 0.13888955116271973
+=======
+   for (int i = 0; i < 10000; i++) {
+      c = c * a;
+   }
+   return c;
+}
+>>>>>>> 75572c6... C Frontend (#22)

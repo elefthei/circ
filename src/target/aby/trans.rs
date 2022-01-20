@@ -9,8 +9,9 @@ use crate::ir::term::*;
 use crate::target::aby::assignment::ilp::assign;
 use crate::target::aby::assignment::{ShareType, SharingMap};
 use crate::target::aby::utils::*;
+use std::fmt;
 
-use std::path::PathBuf;
+use std::path::Path;
 
 const NO_ROLE: u8 = u8::MAX;
 const SERVER: u8 = 0;
@@ -36,25 +37,31 @@ struct ToABY {
     s_map: SharingMap,
     share_cnt: i32,
     setup_fname: String,
-    circuit_fname: String
+    circuit_fname: String,
 }
 
 impl ToABY {
-    fn new(metadata: ComputationMetadata, s_map: SharingMap, path_buf: &PathBuf, lang: &String) -> Self {
+    fn new(metadata: ComputationMetadata, s_map: SharingMap, path: &Path, lang: &str) -> Self {
         Self {
             md: metadata,
             inputs: TermMap::new(),
             cache: TermMap::new(),
-            s_map: s_map,
+            s_map,
+            share_cnt: 0,
+            setup_fname: get_path(path, lang, &String::from("setup")),
+            circuit_fname: get_path(path, lang, &String::from("circuit")),
         }
     }
 
     fn get_var_name(t: Term, b: bool) -> String {
         match &t.op {
-            Op::Var(name, _) =>
+            Op::Var(name, _) => {
                 if b {
-                    name.to_string().clone().replace(".", "_")
-                } else { name.to_string() },
+                    name.to_string().replace(".", "_")
+                } else {
+                    name.to_string()
+                }
+            }
             _ => panic!("Term {} is not of type Var", t),
         }
     }
@@ -74,9 +81,9 @@ impl ToABY {
             panic!("Invalid variable name: {}", full_name);
         }
         let mut name = parsed[parsed.len() - 2].to_string();
-        if full_name.contains(".") {
-            let index: Vec<String> = full_name.split(".").map(str::to_string).collect();
-            if index.len() < 1 {
+        if full_name.contains('.') {
+            let index: Vec<String> = full_name.split('.').map(str::to_string).collect();
+            if index.is_empty() {
                 panic!("Invalid variable name: {}", full_name);
             }
             name += &("_".to_owned() + &index[index.len() - 1].to_string());
@@ -118,7 +125,7 @@ impl ToABY {
     }
 
     fn add_cons_gate(&self, t: Term) -> String {
-        let name = ToABY::get_var_name(t.clone());
+        let name = ToABY::get_var_name(t.clone(), true);
         let s_circ = self.get_sharetype_circ(t);
         format!(
             "s_{} = {}->PutCONSGate((uint64_t){}, bitlen);\n",
@@ -127,7 +134,7 @@ impl ToABY {
     }
 
     fn add_in_gate(&self, t: Term, role: String) -> String {
-        let name = ToABY::get_var_name(t.clone());
+        let name = ToABY::get_var_name(t.clone(), true);
         let s_circ = self.get_sharetype_circ(t);
         format!(
             "\ts_{} = {}->PutINGate({}, bitlen, {});\n",
@@ -136,9 +143,9 @@ impl ToABY {
     }
 
     fn add_dummy_gate(&self, t: Term) -> String {
-        let name = ToABY::get_var_name(t.clone());
+        let name = ToABY::get_var_name(t.clone(), true);
         let s_circ = self.get_sharetype_circ(t);
-        format!("\ts_{} = {}->PutDummyINGate(bitlen);", name, s_circ)
+        format!("\ts_{} = {}->PutDummyINGate(bitlen);\n", name, s_circ)
     }
 
     /// Initialize private and public inputs from each party
@@ -155,13 +162,19 @@ impl ToABY {
             let name = ToABY::get_var_name(t.clone(), false);
             let name_ = ToABY::get_var_name(t.clone(), true);
 
-            write_line_to_file(&self.setup_fname, &format!(
-                "uint32_t {} = std::atoi(params[\"{}\"].c_str());\n",
-                name_,
-                self.parse_var_name(name.to_string())
-            ));
+            write_line_to_file(
+                &self.setup_fname,
+                &format!(
+                    "uint32_t {} = std::atoi(params[\"{}\"].c_str());\n",
+                    name_,
+                    self.parse_var_name(name.to_string())
+                ),
+            );
 
-            write_line_to_file(&self.setup_fname, &format!("share* s_{};\n", name_).to_string());
+            write_line_to_file(
+                &self.setup_fname,
+                &format!("share* s_{};\n", name_).to_string(),
+            );
 
             let role = party.unwrap_or_else(|| NO_ROLE);
             if role == SERVER {
@@ -184,7 +197,10 @@ impl ToABY {
         write_line_to_file(&self.setup_fname, &String::from("if (role == SERVER) {\n"));
         // TODO: add in gates based on type / number of inputs
         for t in server_inputs.iter() {
-            write_line_to_file(&self.setup_fname, &self.add_in_gate(t.clone(), "SERVER".to_string()));
+            write_line_to_file(
+                &self.setup_fname,
+                &self.add_in_gate(t.clone(), "SERVER".to_string()),
+            );
         }
         for t in client_inputs.iter() {
             write_line_to_file(&self.setup_fname, &self.add_dummy_gate(t.clone()));
@@ -194,7 +210,10 @@ impl ToABY {
         // Initialize Client inputs
         write_line_to_file(&self.setup_fname, &String::from("if (role == CLIENT) {\n"));
         for t in client_inputs.iter() {
-            write_line_to_file(&self.setup_fname, &self.add_in_gate(t.clone(), "CLIENT".to_string()));
+            write_line_to_file(
+                &self.setup_fname,
+                &self.add_in_gate(t.clone(), "CLIENT".to_string()),
+            );
         }
         for t in server_inputs.iter() {
             write_line_to_file(&self.setup_fname, &self.add_dummy_gate(t.clone()));
@@ -205,27 +224,13 @@ impl ToABY {
     /// Return constant gate evaluating to 0
     // TODO: const should not be hardcoded to acirc
     #[allow(dead_code)]
-    fn zero() -> &'static str {
-        "bcirc->PutCONSGate((uint64_t)0, (uint32_t)1)"
+    fn zero() -> String {
+        "acirc->PutCONSGate((uint64_t)0, (uint32_t)1)".to_string()
     }
 
     /// Return constant gate evaluating to 1
-    fn one() -> &'static str {
-        "bcirc->PutCONSGate((uint64_t)1, (uint32_t)1)"
-    }
-
-    fn remove_cons_gate(&self, circ: String) -> String {
-        if circ.contains("PutCONSGate(") {
-            circ.split("PutCONSGate(")
-                .last()
-                .unwrap_or("")
-                .split(',')
-                .next()
-                .unwrap_or("")
-                .to_string()
-        } else {
-            panic!("PutCONSGate not found in: {}", circ)
-        }
+    fn one(s_type: &str) -> String {
+        format!("{}->PutCONSGate((uint64_t)1, (uint32_t)1)", s_type)
     }
 
     fn embed_eq(&mut self, t: Term, a: Term, b: Term) {
@@ -251,12 +256,7 @@ impl ToABY {
                 );
                 write_line_to_file(&self.circuit_fname, &s);
 
-                self.cache.insert(
-                    t.clone(),
-                    EmbeddedTerm::Bool(share),
-                );
-                self.cache.insert(t, EmbeddedTerm::Bool(s.clone()));
-                s
+                self.cache.insert(t, EmbeddedTerm::Bool(share));
             }
             Sort::BitVector(_) => {
                 let a_circ = self.get_bv(&a);
@@ -271,8 +271,8 @@ impl ToABY {
                     "share* {} = {}->PutXORGate({}->PutXORGate({}->PutGTGate({}, {}), {}->PutGTGate({}, {})), {});\n",
                     share, s_circ, s_circ, s_circ, a_conv, b_conv, s_circ, b_conv, a_conv, ToABY::one(&s_circ)
                 );
-                self.cache.insert(t, EmbeddedTerm::Bool(s.clone()));
-                s
+                write_line_to_file(&self.circuit_fname, &s);
+                self.cache.insert(t, EmbeddedTerm::Bool(share));
             }
             e => panic!("Unimplemented sort for Eq: {:?}", e),
         }
@@ -300,8 +300,10 @@ impl ToABY {
                         .insert(t.clone(), *self.md.input_vis.get(name).unwrap());
                 }
                 if !self.cache.contains_key(&t) {
-                    self.cache
-                        .insert(t.clone(), EmbeddedTerm::Bool(format!("s_{}", name.replace(".", "_"))));
+                    self.cache.insert(
+                        t.clone(),
+                        EmbeddedTerm::Bool(format!("s_{}", name.replace(".", "_"))),
+                    );
                 }
             }
             Op::Const(Value::Bool(b)) => {
@@ -309,17 +311,11 @@ impl ToABY {
                 self.inc_share();
                 let s = format!(
                     "share* {} = {}->PutCONSGate((uint64_t){}, (uint32_t){});\n",
-                    share,
-                    s_circ,
-                    *b as isize,
-                    BOOLEAN_BITLEN
+                    share, s_circ, *b as isize, BOOLEAN_BITLEN
                 );
                 write_line_to_file(&self.circuit_fname, &s);
 
-                self.cache.insert(
-                    t.clone(),
-                    EmbeddedTerm::Bool(share),
-                );
+                self.cache.insert(t.clone(), EmbeddedTerm::Bool(share));
             }
             Op::Eq => {
                 self.embed_eq(t.clone(), t.cs[0].clone(), t.cs[1].clone());
@@ -340,10 +336,7 @@ impl ToABY {
                     share, s_circ, a_conv, b_conv, sel_conv
                 );
                 write_line_to_file(&self.circuit_fname, &s);
-                self.cache.insert(
-                    t.clone(),
-                    EmbeddedTerm::Bool(share),
-                );
+                self.cache.insert(t.clone(), EmbeddedTerm::Bool(share));
             }
             Op::Not => {
                 let a_circ = self.get_bool(&t.cs[0]);
@@ -356,21 +349,26 @@ impl ToABY {
                     share, s_circ, a_conv
                 );
                 write_line_to_file(&self.circuit_fname, &s);
-                self.cache.insert(
-                    t.clone(),
-                    EmbeddedTerm::Bool(share),
-                );
+                self.cache.insert(t.clone(), EmbeddedTerm::Bool(share));
             }
             Op::BoolNaryOp(o) => {
-                let a_circ = self.get_bool(&t.cs[0]);
-                let b_circ = self.get_bool(&t.cs[1]);
+                if t.cs.len() == 1 {
+                    // HACK: Conditionals might not contain two variables
+                    // If t.cs len is 1, just output that term
+                    // This is to bypass adding an AND gate with a single conditional term
+                    // Refer to pub fn condition() in src/circify/mod.rs
+                    let a = self.get_bool(&t.cs[0]);
+                    self.cache.insert(t.clone(), EmbeddedTerm::Bool(a));
+                } else {
+                    let a_circ = self.get_bool(&t.cs[0]);
+                    let b_circ = self.get_bool(&t.cs[1]);
 
-                let a_conv = self.add_conv_gate(t.clone(), t.cs[0].clone(), a_circ);
-                let b_conv = self.add_conv_gate(t.clone(), t.cs[1].clone(), b_circ);
+                    let a_conv = self.add_conv_gate(t.clone(), t.cs[0].clone(), a_circ);
+                    let b_conv = self.add_conv_gate(t.clone(), t.cs[1].clone(), b_circ);
 
-                if *o == BoolNaryOp::Or {
-                    s_circ = format!("((BooleanCircuit *) {})", s_circ);
-                }
+                    if *o == BoolNaryOp::Or {
+                        s_circ = format!("((BooleanCircuit *) {})", s_circ);
+                    }
 
                     let share = self.get_share_name();
                     self.inc_share();
@@ -387,11 +385,9 @@ impl ToABY {
                         b_conv
                     );
                     write_line_to_file(&self.circuit_fname, &s);
-                    self.cache.insert(
-                        t.clone(),
-                        EmbeddedTerm::Bool(share),
-                    );
+                    self.cache.insert(t.clone(), EmbeddedTerm::Bool(share));
                 }
+            }
             Op::BvBinPred(op) => {
                 let a_circ = self.get_bv(&t.cs[0]);
                 let b_circ = self.get_bv(&t.cs[1]);
@@ -429,10 +425,7 @@ impl ToABY {
                     _ => panic!("Non-field in bool BvBinPred: {}", op),
                 };
                 write_line_to_file(&self.circuit_fname, &s);
-                self.cache.insert(
-                    t.clone(),
-                    EmbeddedTerm::Bool(share),
-                );
+                self.cache.insert(t.clone(), EmbeddedTerm::Bool(share));
             }
             _ => panic!("Non-field in embed_bool: {}", t),
         }
@@ -461,8 +454,10 @@ impl ToABY {
                         .insert(t.clone(), *self.md.input_vis.get(name).unwrap());
                 }
                 if !self.cache.contains_key(&t) {
-                    self.cache
-                        .insert(t.clone(), EmbeddedTerm::Bv(format!("s_{}", name.replace(".", "_"))));
+                    self.cache.insert(
+                        t.clone(),
+                        EmbeddedTerm::Bv(format!("s_{}", name.replace(".", "_"))),
+                    );
                 }
             }
             Op::Const(Value::BitVector(b)) => {
@@ -477,10 +472,7 @@ impl ToABY {
                 );
                 write_line_to_file(&self.circuit_fname, &s);
 
-                self.cache.insert(
-                    t.clone(),
-                    EmbeddedTerm::Bv(share),
-                );
+                self.cache.insert(t.clone(), EmbeddedTerm::Bv(share));
             }
             Op::Ite => {
                 let sel_circ = self.get_bool(&t.cs[0]);
@@ -499,10 +491,7 @@ impl ToABY {
                 );
                 write_line_to_file(&self.circuit_fname, &s);
 
-                self.cache.insert(
-                    t.clone(),
-                    EmbeddedTerm::Bv(share),
-                );
+                self.cache.insert(t.clone(), EmbeddedTerm::Bv(share));
             }
             Op::BvNaryOp(o) => {
                 let a_circ = self.get_bv(&t.cs[0]);
@@ -537,6 +526,9 @@ impl ToABY {
                     t.clone(),
                     EmbeddedTerm::Bv(share),
                 );
+                write_line_to_file(&self.circuit_fname, &s);
+
+                self.cache.insert(t.clone(), EmbeddedTerm::Bv(share));
             }
             Op::BvBinOp(o) => {
                 let a_circ = self.get_bv(&t.cs[0]);
@@ -547,14 +539,11 @@ impl ToABY {
 
                 let share = self.get_share_name();
                 self.inc_share();
-                match o {
+                let s = match o {
                     BvBinOp::Sub => {
                         format!(
                             "share* {} = {}->PutSUBGate({}, {});\n",
-                            share,
-                            s_circ,
-                            a_conv,
-                            b_conv
+                            share, s_circ, a_conv, b_conv
                         )
                     }
                     _ => {
@@ -574,20 +563,12 @@ impl ToABY {
                             b_conv,
                         )
                     }
-                    BvBinOp::Ashr => {
-                        let b_val = self.remove_cons_gate(b_conv);
-                        self.cache.insert(
-                            t.clone(),
-                            EmbeddedTerm::Bv(format!(
-                                "arithmetic_right_shift({}, {}, {})",
-                                s_circ, a_conv, b_val
-                            )),
-                        );
-                    }
-                    _ => panic!("Invalid bv-op in BvBinOp: {:?}", o),
-                }
+                };
+                write_line_to_file(&self.circuit_fname, &s);
+                self.cache.insert(t.clone(), EmbeddedTerm::Bv(share));
             }
-            Op::BvExtract(_start, _end) => {},
+            // TODO
+            Op::BvExtract(_start, _end) => {}
             _ => panic!("Non-field in embed_bv: {:?}", t),
         }
 
@@ -600,7 +581,7 @@ impl ToABY {
     /// Return a String of the resulting Circuit
     fn format_output_circuit(&self, t: Term) -> String {
         match self.cache.get(&t) {
-            Some(EmbeddedTerm::Bool(s)) | Some(EmbeddedTerm::Bv(s))  => {
+            Some(EmbeddedTerm::Bool(s)) | Some(EmbeddedTerm::Bv(s)) => {
                 format!(
                     "add_to_output_queue(out_q, {}->PutOUTGate({}, ALL), role, std::cout);\n",
                     self.get_sharetype_circ(t),
@@ -628,24 +609,28 @@ impl ToABY {
 
     /// Given a term `t`, lower `t` to ABY Circuits
     fn lower(&mut self, t: Term) {
-        let circ = self.embed(t);
-        self.aby.circs.push(circ);
+        let s = self.embed(t);
+        write_line_to_file(&self.circuit_fname, &s);
     }
 }
 
 /// Convert this (IR) `ir` to ABY.
-pub fn to_aby(ir: Computation, path_buf: &PathBuf, lang: &String) {
+pub fn to_aby(ir: Computation, path: &Path, lang: &str, cm: &str) {
     let Computation {
         outputs: terms,
         metadata: md,
         values: _,
     } = ir.clone();
-    let s_map: SharingMap = assign(&ir);
+    for t in terms.clone() {
+        println!("terms: {}", t);
+    }
+
+    let s_map: SharingMap = assign(&ir, cm);
     // let s_map: SharingMap = some_arith_sharing(&ir);
-    let mut converter = ToABY::new(md, s_map, path_buf, lang);
+    let mut converter = ToABY::new(md, s_map, path, lang);
 
     for t in terms {
-        // println!("terms: {}", t);
+        println!("terms: {}", t);
         converter.lower(t.clone());
     }
 
@@ -653,6 +638,4 @@ pub fn to_aby(ir: Computation, path_buf: &PathBuf, lang: &String) {
     // are the input parameters for the ABY circuit.
     // Call init_inputs here after self.inputs is populated.
     converter.init_inputs();
-
-    converter.aby
 }

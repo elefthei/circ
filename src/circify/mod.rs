@@ -437,7 +437,7 @@ impl<E: Embeddable> Circify<E> {
             fn_ctr: 0,
             globals: LexScope::with_prefix("global".to_string()),
             cir_ctx: CirCtx {
-                mem: Rc::new(RefCell::new(mem::MemManager::new(cs.clone()))),
+                mem: Rc::new(RefCell::new(mem::MemManager::default())),
                 cs,
             },
             condition: leaf_term(Op::Const(Value::Bool(true))),
@@ -793,12 +793,12 @@ impl<E: Embeddable> Circify<E> {
         self.cir_ctx.cs
     }
 
-    /// Load from an AllocID
+    /// Load from an AllocId
     pub fn load(&self, id: AllocId, offset: Term) -> Term {
         self.cir_ctx.mem.borrow_mut().load(id, offset)
     }
 
-    /// Store to an AllocID
+    /// Conditional store to an AllocId based on current path condition
     pub fn store(&mut self, id: AllocId, offset: Term, val: Term) {
         let cond = self.condition();
         self.cir_ctx.mem.borrow_mut().store(id, offset, val, cond);
@@ -806,7 +806,10 @@ impl<E: Embeddable> Circify<E> {
 
     /// Zero allocate an array
     pub fn zero_allocate(&mut self, size: usize, addr_width: usize, val_width: usize) -> AllocId {
-        self.cir_ctx.mem.borrow_mut().zero_allocate(size, addr_width, val_width)
+        self.cir_ctx
+            .mem
+            .borrow_mut()
+            .zero_allocate(size, addr_width, val_width)
     }
 }
 
