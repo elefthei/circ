@@ -10,7 +10,7 @@ use merlin::Transcript;
 use bls12_381::{Bls12, Scalar};
 use circ::front::c::{self, C};
 use circ::front::datalog::{self, Datalog};
-use circ::front::zokrates::{self, Zokrates};
+use circ::front::zsharp::{self, ZSharpFE};
 use circ::front::{FrontEnd, Mode};
 use circ::ir::{
     opt::{opt, Opt},
@@ -25,12 +25,11 @@ use circ::target::r1cs::trans::to_r1cs;
 use circ::target::r1cs::spartan::r1cs_to_spartan;
 
 use circ::target::smt::find_model;
-use env_logger;
 use good_lp::default_solver;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
 
@@ -107,7 +106,7 @@ enum Backend {
 arg_enum! {
     #[derive(PartialEq, Debug)]
     enum Language {
-        Zokrates,
+        Zsharp,
         Datalog,
         C,
         Auto,
@@ -116,7 +115,7 @@ arg_enum! {
 
 #[derive(PartialEq, Debug)]
 pub enum DeterminedLanguage {
-    Zokrates,
+    Zsharp,
     Datalog,
     C,
 }
@@ -146,22 +145,18 @@ arg_enum! {
     }
 }
 
-fn determine_language(l: &Language, input_path: &PathBuf) -> DeterminedLanguage {
-    match l {
-        &Language::Datalog => DeterminedLanguage::Datalog,
-        &Language::Zokrates => DeterminedLanguage::Zokrates,
-        &Language::C => DeterminedLanguage::C,
-        &Language::Auto => {
+fn determine_language(l: &Language, input_path: &Path) -> DeterminedLanguage {
+    match *l {
+        Language::Datalog => DeterminedLanguage::Datalog,
+        Language::Zsharp => DeterminedLanguage::Zsharp,
+        Language::C => DeterminedLanguage::C,
+        Language::Auto => {
             let p = input_path.to_str().unwrap();
             if p.ends_with(".zok") {
-                DeterminedLanguage::Zokrates
+                DeterminedLanguage::Zsharp
             } else if p.ends_with(".pl") {
                 DeterminedLanguage::Datalog
-            } else if p.ends_with(".c") {
-                DeterminedLanguage::C
-            } else if p.ends_with(".cpp") {
-                DeterminedLanguage::C
-            } else if p.ends_with(".cc") {
+            } else if p.ends_with(".c") || p.ends_with(".cpp") || p.ends_with(".cc") {
                 DeterminedLanguage::C
             } else {
                 println!("Could not deduce the input language from path '{}', please set the language manually", p);
@@ -190,13 +185,13 @@ fn main() {
     };
     let language = determine_language(&options.frontend.language, &options.path);
     let cs = match language {
-        DeterminedLanguage::Zokrates => {
-            let inputs = zokrates::Inputs {
+        DeterminedLanguage::Zsharp => {
+            let inputs = zsharp::Inputs {
                 file: options.path,
                 inputs: options.frontend.inputs,
-                mode: mode.clone(),
+                mode,
             };
-            Zokrates::gen(inputs)
+            ZSharpFE::gen(inputs)
         }
         DeterminedLanguage::Datalog => {
             let inputs = datalog::Inputs {
@@ -210,7 +205,7 @@ fn main() {
             let inputs = c::Inputs {
                 file: options.path,
                 inputs: options.frontend.inputs,
-                mode: mode.clone(),
+                mode,
             };
             C::gen(inputs)
         }
@@ -364,7 +359,7 @@ fn main() {
             println!("Converting to aby");
             let lang_str = match language {
                 DeterminedLanguage::C => "c".to_string(),
-                DeterminedLanguage::Zokrates => "zok".to_string(),
+                DeterminedLanguage::Zsharp => "zok".to_string(),
                 _ => panic!("Language isn't supported by MPC backend: {:#?}", language),
             };
             println!("Cost model: {}", cost_model);
@@ -386,7 +381,7 @@ fn main() {
                 if var.contains("f0") {
                     let i = var.find("f0").unwrap();
                     let s = &var[i + 8..];
-                    let e = s.find("_").unwrap();
+                    let e = s.find('_').unwrap();
                     writeln!(f, "{} {}", &s[..e], val.round() as u64).unwrap();
                 }
             }
