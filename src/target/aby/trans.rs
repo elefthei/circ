@@ -6,9 +6,13 @@
 
 use std::fmt;
 use crate::ir::term::*;
+#[cfg(feature = "lp")]
 use crate::target::aby::assignment::ilp::assign;
+#[cfg(not(feature = "lp"))]
+use crate::target::aby::assignment::some_arith_sharing;
 use crate::target::aby::assignment::{ShareType, SharingMap};
 use crate::target::aby::utils::*;
+use log::debug;
 use std::fmt;
 
 use std::path::Path;
@@ -57,7 +61,7 @@ impl ToABY {
         match &t.op {
             Op::Var(name, _) => {
                 if b {
-                    name.to_string().replace(".", "_")
+                    name.to_string().replace('.', "_")
                 } else {
                     name.to_string()
                 }
@@ -302,7 +306,7 @@ impl ToABY {
                 if !self.cache.contains_key(&t) {
                     self.cache.insert(
                         t.clone(),
-                        EmbeddedTerm::Bool(format!("s_{}", name.replace(".", "_"))),
+                        EmbeddedTerm::Bool(format!("s_{}", name.replace('.', "_"))),
                     );
                 }
             }
@@ -456,7 +460,7 @@ impl ToABY {
                 if !self.cache.contains_key(&t) {
                     self.cache.insert(
                         t.clone(),
-                        EmbeddedTerm::Bv(format!("s_{}", name.replace(".", "_"))),
+                        EmbeddedTerm::Bv(format!("s_{}", name.replace('.', "_"))),
                     );
                 }
             }
@@ -467,7 +471,7 @@ impl ToABY {
                     "share* {} = {}->PutCONSGate((uint64_t){}, (uint32_t){});\n",
                     share,
                     s_circ,
-                    format!("{}", b).replace("#", "0"),
+                    format!("{}", b).replace('#', "0"),
                     b.width()
                 );
                 write_line_to_file(&self.circuit_fname, &s);
@@ -520,6 +524,7 @@ impl ToABY {
                     a_conv,
                     b_conv
                 );
+
                 write_line_to_file(&self.circuit_fname, &s);
 
                 self.cache.insert(
@@ -621,16 +626,15 @@ pub fn to_aby(ir: Computation, path: &Path, lang: &str, cm: &str) {
         metadata: md,
         values: _,
     } = ir.clone();
-    for t in terms.clone() {
-        println!("terms: {}", t);
-    }
 
+    #[cfg(feature = "lp")]
     let s_map: SharingMap = assign(&ir, cm);
-    // let s_map: SharingMap = some_arith_sharing(&ir);
+    #[cfg(not(feature = "lp"))]
+    let s_map: SharingMap = some_arith_sharing(&ir, cm);
     let mut converter = ToABY::new(md, s_map, path, lang);
 
     for t in terms {
-        println!("terms: {}", t);
+        debug!("terms: {}", t);
         converter.lower(t.clone());
     }
 
