@@ -23,6 +23,7 @@ pub fn get_path(path: &Path, lang: &str, t: &str) -> String {
         .into_string()
         .unwrap();
 
+<<<<<<< HEAD
     let name = format!("{}_{}", filename, lang);
 
     // TODO: clean
@@ -35,10 +36,19 @@ pub fn get_path(path: &Path, lang: &str, t: &str) -> String {
 =======
     let path = format!("third_party/ABY/src/examples/{}_{}_tmp.txt", name, t);
 >>>>>>> 75572c6... C Frontend (#22)
+=======
+    match fs::create_dir_all("scripts/aby_tests/tests") {
+        Err(why) => panic!("couldn't create {}: {}", "scripts/aby_tests/tests", why),
+        Ok(file) => file,
+    };
+>>>>>>> 8fed29b... ABY VM and Interpreter (#47)
 
-    if Path::new(&path).exists() {
-        fs::remove_file(&path).expect("Failed to remove old circuit_tmp file");
-    }
+    let name = format!("{}_{}", filename, lang);
+    let path = format!("scripts/aby_tests/tests/{}_{}.txt", name, t);
+    match fs::File::create(&path) {
+        Err(why) => panic!("couldn't create {}: {}", path, why),
+        Ok(file) => file,
+    };
     path
 }
 
@@ -59,7 +69,7 @@ pub fn write_line_to_file(path: &String, line: &String) {
 =======
 pub fn write_line_to_file(path: &str, line: &str) {
     if !Path::new(&path).exists() {
-        fs::File::create(&path).expect("Failed to create tmp file");
+        fs::File::create(&path).expect(&*format!("Failed to create: {}", path));
     }
 
     let mut file = fs::OpenOptions::new()
