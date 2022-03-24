@@ -54,6 +54,7 @@ pub fn get_path(path: &Path, lang: &str, t: &str) -> String {
 
 /// Write circuit output to temporary file
 <<<<<<< HEAD
+<<<<<<< HEAD
 pub fn write_line_to_file(path: &String, line: &String) {
     if !Path::new(&path).exists() {
         fs::File::create(&path).expect("Failed to create tmp file");
@@ -68,9 +69,14 @@ pub fn write_line_to_file(path: &String, line: &String) {
     file.write_all(line.as_bytes()).expect("Failed to write to circuit_tmp file");
 =======
 pub fn write_line_to_file(path: &str, line: &str) {
+=======
+pub fn write_lines_to_file(path: &str, lines: &[String]) {
+>>>>>>> 13f9a09... Updated ABY VM to include `IN` bytecode instruction (#65)
     if !Path::new(&path).exists() {
         fs::File::create(&path).expect(&*format!("Failed to create: {}", path));
     }
+
+    let data = lines.join("");
 
     let mut file = fs::OpenOptions::new()
         .write(true)
@@ -78,7 +84,7 @@ pub fn write_line_to_file(path: &str, line: &str) {
         .open(path)
         .expect("Failed to open circuit_tmp file");
 
-    file.write_all(line.as_bytes())
+    file.write_all(data.as_bytes())
         .expect("Failed to write to circuit_tmp file");
 >>>>>>> 75572c6... C Frontend (#22)
 }
