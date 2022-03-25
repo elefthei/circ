@@ -3,6 +3,17 @@
 version = 3
 
 [[package]]
+name = "addchain"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b2e69442aa5628ea6951fa33e24efe8313f4321a91bd729fc2f75bdfc858570"
+dependencies = [
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -243,6 +254,7 @@ dependencies = [
  "bincode",
  "bls12_381",
  "curve25519-dalek",
+ "circ_fields",
  "env_logger",
  "ff",
  "from-pest",
@@ -258,6 +270,7 @@ dependencies = [
  "logos",
  "lp-solvers",
  "merlin",
+ "paste",
  "pest",
  "pest-ast",
  "pest_derive",
@@ -275,6 +288,21 @@ dependencies = [
  "typed-arena",
  "zokrates_parser",
  "zokrates_pest_ast",
+]
+
+[[package]]
+name = "circ_fields"
+version = "0.1.0"
+dependencies = [
+ "ff",
+ "ff-derive-num",
+ "ff_derive 0.11.0 (git+https://github.com/kwantam/ff.git?rev=b3041c177b9ae28095c9ce8347600212252abc83)",
+ "lazy_static",
+ "num-traits",
+ "paste",
+ "rand",
+ "rug",
+ "serde",
 ]
 
 [[package]]
@@ -475,8 +503,55 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2958d04124b9f27f175eaeb9a9f383d026098aa837eadd8ba22c11f13a05b9e"
 dependencies = [
  "bitvec",
+<<<<<<< HEAD
  "rand_core 0.6.3",
+=======
+ "byteorder",
+ "ff_derive 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand_core",
+>>>>>>> 8c8e704... field flexibility ; add limit for linearity reduction (#66)
  "subtle",
+]
+
+[[package]]
+name = "ff-derive-num"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e715451ab983be06481e927a275ec12372103ad426c7cb82cebfe14698ed4cf4"
+dependencies = [
+ "num-traits",
+ "proc-macro2 1.0.30",
+ "quote 1.0.10",
+ "syn 1.0.80",
+]
+
+[[package]]
+name = "ff_derive"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a923972863adcef93ac7092c9bf6543a26e922c1bd6c925518156411e05bf85c"
+dependencies = [
+ "addchain",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "proc-macro2 1.0.30",
+ "quote 1.0.10",
+ "syn 1.0.80",
+]
+
+[[package]]
+name = "ff_derive"
+version = "0.11.0"
+source = "git+https://github.com/kwantam/ff.git?rev=b3041c177b9ae28095c9ce8347600212252abc83#b3041c177b9ae28095c9ce8347600212252abc83"
+dependencies = [
+ "addchain",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "proc-macro2 1.0.30",
+ "quote 1.0.10",
+ "syn 1.0.80",
 ]
 
 [[package]]
@@ -805,6 +880,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-bigint"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f6f7833f2cbf2360a6cfd58cd41a53aa7a90bd4c202f5b1c7dd2ed73c57b2c3"
+dependencies = [
+ "autocfg",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-integer"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
+dependencies = [
+ "autocfg",
+ "num-traits",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -862,6 +958,12 @@ checksum = "f2e415e349a3006dd7d9482cdab1c980a845bed1377777d768cb693a44540b42"
 dependencies = [
  "group",
 ]
+
+[[package]]
+name = "paste"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
 
 [[package]]
 name = "pest"

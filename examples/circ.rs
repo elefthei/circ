@@ -33,6 +33,8 @@ use circ::target::r1cs::spartan::r1cs_to_spartan;
 
 #[cfg(feature = "smt")]
 use circ::target::smt::find_model;
+use circ::util::field::DFL_T;
+use circ_fields::FieldT;
 #[cfg(feature = "lp")]
 use good_lp::default_solver;
 use std::fs::File;
@@ -102,6 +104,9 @@ enum Backend {
         proof: PathBuf,
         #[structopt(long, default_value = "x", parse(from_os_str))]
         instance: PathBuf,
+        #[structopt(long, default_value = "50")]
+        /// linear combination constraints up to this size will be eliminated
+        lc_elimination_thresh: usize,
         #[structopt(long, default_value = "count")]
         action: ProofAction,
 
@@ -286,6 +291,7 @@ fn main() {
             prover_key,
             verifier_key,
             instance,
+            lc_elimination_thresh,
             ..
         } => {
             println!("Converting to r1cs");
@@ -293,7 +299,7 @@ fn main() {
             println!("Pre-opt R1cs size: {}", r1cs.constraints().len());
 
             // LEF: Why is this commented out?
-            // let r1cs = reduce_linearities(r1cs);
+            // let r1cs = reduce_linearities(r1cs, Some(lc_elimination_thresh));
 	          println!("Post-opt R1cs size: {}", r1cs.constraints().len());
 	          let num_r1cs = r1cs.constraints().len().clone();
 
