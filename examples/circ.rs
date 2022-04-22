@@ -39,6 +39,10 @@ use std::path::{Path, PathBuf};
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
 
+use libspartan::{Instance, NIZKGens, NIZK};
+use merlin::Transcript;
+use circ::target::r1cs::spartan::r1cs_to_spartan;
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "circ", about = "CirC: the circuit compiler")]
 struct Options {
@@ -139,6 +143,7 @@ arg_enum! {
         Prove,
         Setup,
         Verify,
+        Spartan,
     }
 }
 
@@ -284,10 +289,19 @@ fn main() {
             ..
         } => {
             println!("Converting to r1cs");
-            let r1cs = to_r1cs(cs, FieldT::from(DFL_T.modulus()));
+            let r1cs;
+            match action {
+                ProofAction::Spartan => {
+                    r1cs = to_r1cs(cs, FieldT::from(circ::target::r1cs::spartan::SPARTAN_MODULUS.clone()));
+                }
+                _ => {
+                    r1cs = to_r1cs(cs, FieldT::from(DFL_T.modulus()));
+                }
+            }
             println!("Pre-opt R1cs size: {}", r1cs.constraints().len());
             let r1cs = reduce_linearities(r1cs, Some(lc_elimination_thresh));
             println!("Final R1cs size: {}", r1cs.constraints().len());
+
             match action {
                 ProofAction::Count => (),
                 ProofAction::Prove => {
@@ -318,6 +332,27 @@ fn main() {
                     let pf = Proof::read(&mut pf_file).unwrap();
                     let instance_vec = parse_instance(&instance);
                     verify_proof(&pvk, &pf, &instance_vec).unwrap();
+                }
+                ProofAction::Spartan => {
+                    println!("Converting R1CS to Spartan");
+                    let (inst, vars, inps, num_cons, num_vars, num_inputs) = r1cs_to_spartan(r1cs);
+
+                    println!("Proving with Spartan");
+                    // produce public parameters
+                    let gens = NIZKGens::new(num_cons, num_vars, num_inputs);
+                    // produce proof
+                    let mut prover_transcript = Transcript::new(b"nizk_example");
+                    let pf = NIZK::prove(&inst, vars, &inps, &gens, &mut prover_transcript);            
+    
+                    println!("Verifying with Spartan");
+                    // verify proof
+                    let mut verifier_transcript = Transcript::new(b"nizk_example");
+                    assert!(pf
+                        .verify(&inst, &inps, &mut verifier_transcript, &gens)
+                        .is_ok());
+
+                    println!("Proof verification successful!");
+                    
                 }
             }
         }

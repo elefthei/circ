@@ -36,6 +36,9 @@ pest-ast = "0.3"
 from-pest = "0.3"
 itertools = "0.10"
 petgraph = "0.6"
+curve25519-dalek = {version = "3.2.0", features = ["serde", "simd_backend"]}
+merlin = "3.0.0"
+spartan = "0.4.1"
 paste = "1.0"
 im = "15"
 
