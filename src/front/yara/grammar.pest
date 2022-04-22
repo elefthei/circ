@@ -1,0 +1,10 @@
+char = ASCII_ALPHANUMERIC
+nat = ASCII_DIGIT
+WHITESPACE = _{ " " | "\t" | "\n" }
+COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+union = { regex ~ "|" ~ regex }
+concat = { regex ~ "+" ~ regex }
+fin_star = { regex ~ [ nat ] }
+empty = { WHITESPACE* }
+paren = _{ "(" ~ regex ~ ")" }
+regex = _{ empty | union | concat | fin_star | char | paren }
