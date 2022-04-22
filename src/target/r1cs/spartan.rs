@@ -39,19 +39,14 @@ pub fn r1cs_to_spartan<S: Eq + Hash + Clone + Display>(r1cs: R1cs<S>) -> (Instan
         Some(_) =>
             for (k,v) in r1cs.values.as_ref().unwrap() { // CirC id, Integer
 
-                let name = r1cs.idxs_signals.get(k).unwrap().to_string();
                 let scalar = int_to_scalar(&v.i());
 
                 if r1cs.public_idxs.contains(k) {
                     // input
-                    println!("As public io: {}", name);
-
                     itrans.insert(*k, inp.len());
                     inp.push(scalar.to_bytes());
                 } else {
                      // witness
-                    println!("As private witness: {}", name);
-
                     trans.insert(*k, wit.len());
                     wit.push(scalar.to_bytes());
 
@@ -141,7 +136,7 @@ fn lc_to_v(lc: &Lc, const_id: usize, trans: &HashMap<usize,usize>) -> Vec<Variab
 
     for (k,m) in &lc.monomials {
         let scalar = int_to_scalar(&m.i());
-        
+
         let var = Variable {
             sid: trans.get(k).unwrap().clone(),
             value: scalar.to_bytes(),
