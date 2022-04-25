@@ -3,6 +3,7 @@
 #[cfg(feature = "c")]
 pub mod c;
 pub mod datalog;
+pub mod yara; // TODO: Implement Parser from Yara
 #[cfg(all(feature = "smt", feature = "zok"))]
 pub mod zsharp;
 
