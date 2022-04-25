@@ -1,7 +1,27 @@
+WHITESPACE = _{ " " | "\t" | "\n" }
+COMMENT_multiline = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+COMMENT_singleline = _{ "//" ~ (ANY)* }
+COMMENT = _{ COMMENT_multiline | COMMENT_singleline }
+
+identifier = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+str_identifier = @{ "$" ~ identifier }
+
+rule = { "rule" ~ identifier ~ "{" ~ rule_body ~ "}" }
+str_pair = { str_identifier ~ "=" ~ regex }
+strings_section = _{ ("strings:" ~ str_pair*) }
+condition_section = _{ ("condition:" ~ (proposition)+) }
+rule_body = _{ (strings_section | condition_section)+ }
+
+proposition_bin = @{ "and" | "or" }
+proposition_binexp = _{ proposition ~ proposition_bin ~ proposition }
+proposition = { proposition_binexp | str_identifier | regex }
+
+// Top level
+file = { rule+ }
+
+// Regular expressions
 char = ASCII_ALPHANUMERIC
 nat = ASCII_DIGIT
-WHITESPACE = _{ " " | "\t" | "\n" }
-COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 union = { regex ~ "|" ~ regex }
 concat = { regex ~ "+" ~ regex }
 fin_star = { regex ~ [ nat ] }
