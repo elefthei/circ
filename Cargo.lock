@@ -270,6 +270,7 @@ dependencies = [
  "fxhash",
  "gmp-mpfr-sys",
  "good_lp",
+ "group",
  "hashconsing",
  "ieee754",
  "im",
@@ -280,6 +281,7 @@ dependencies = [
  "logos",
  "lp-solvers",
  "merlin",
+ "pairing",
  "paste",
  "pest",
  "pest-ast",
@@ -1309,6 +1311,7 @@ dependencies = [
  "az",
  "gmp-mpfr-sys",
  "libc",
+ "serde",
 ]
 
 [[package]]
