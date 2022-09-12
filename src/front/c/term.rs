@@ -767,9 +767,13 @@ impl Embeddable for Ct {
 =======
 =======
                 let v: Vec<Self::T> = (0..*n)
+<<<<<<< HEAD
 >>>>>>> 7693d30... Updates to C Frontend (#67)
                     .map(|i| self.declare_input(ctx, &*ty, idx_name(&name, i), visibility, None))
 >>>>>>> c129346... Precomputations (or, as-known-for-proofs, witness extension) (#80)
+=======
+                    .map(|i| self.declare_input(ctx, ty, idx_name(&name, i), visibility, None))
+>>>>>>> 15eadb6... Fix Linter Warnings (#103)
                     .collect();
                 let mut mem = ctx.mem.borrow_mut();
 <<<<<<< HEAD

@@ -128,7 +128,7 @@ enum Backend {
 }
 
 arg_enum! {
-    #[derive(PartialEq, Debug)]
+    #[derive(PartialEq, Eq, Debug)]
     enum Language {
         Zsharp,
         Datalog,
@@ -137,21 +137,21 @@ arg_enum! {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum DeterminedLanguage {
     Zsharp,
     Datalog,
     C,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum CostModelType {
     Opa,
     Hycc,
 }
 
 arg_enum! {
-    #[derive(PartialEq, Debug)]
+    #[derive(PartialEq, Eq, Debug)]
     enum ProofAction {
         Count,
         Setup,
