@@ -32,37 +32,10 @@ impl PartialEq for Ty {
     }
 }
 
-<<<<<<< HEAD
-impl Ty {
-    pub fn default(&self) -> CTerm {
-        match self {
-            Self::Bool => CTerm {
-                term: CTermData::CBool(leaf_term(Op::Const(Value::Bool(false)))),
-                udef: false,
-            },
-            Self::Int(s, w) => CTerm {
-                term: CTermData::CInt(*s, *w, bv_lit(0, *w)),
-                udef: false,
-            },
-            Self::Array(_s, ty) => {
-                CTerm {
-                    term: CTermData::CArray(*ty.clone(), None),
-                    udef: false,
-                }
-            }
-        }
-    }
-}
-
-=======
->>>>>>> 75572c6... C Frontend (#22)
 impl Display for Ty {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Ty::Bool => write!(f, "bool"),
-<<<<<<< HEAD
-            Ty::Int(s, w) => if *s { write!(f, "s{}", w) } else { write!(f, "u{}", w) },
-=======
             Ty::Int(s, w) => {
                 if *s {
                     write!(f, "s{}", w)
@@ -70,10 +43,6 @@ impl Display for Ty {
                     write!(f, "u{}", w)
                 }
             }
-<<<<<<< HEAD
->>>>>>> 75572c6... C Frontend (#22)
-            Ty::Array(_, b) => write!(f, "{}[]", b),
-=======
             Ty::Struct(n, fields) => {
                 let mut o = f.debug_struct(n);
                 for (f_name, f_ty) in fields.fields() {
@@ -94,7 +63,6 @@ impl Display for Ty {
             Ty::Ptr(s, t) => {
                 write!(f, "ptr{}({})", s, t)
             }
->>>>>>> 7693d30... Updates to C Frontend (#67)
         }
     }
 }
@@ -105,69 +73,6 @@ impl fmt::Debug for Ty {
     }
 }
 
-<<<<<<< HEAD
-pub fn is_arith_type(t: &CTerm) -> bool {
-    let ty = t.term.type_();
-    match ty {
-        Ty::Int(_,_) | Ty::Bool => true,
-        _ => false,
-    }
-}
-
-pub fn is_signed_int(ty: Ty) -> bool {
-    if let Ty::Int(s, w) = ty {
-        if w == 8 || w == 16 || w == 32 || w == 64 {
-            return s;
-        }
-        return false;
-    }
-    return false;
-}
-
-pub fn is_unsigned_int(ty: Ty) -> bool {
-    if let Ty::Int(s, w) = ty {
-        if !s && (w == 8 || w == 16 || w == 32 || w == 64 ) {
-            return !s;
-        }
-        return s;
-    }
-    return false;
-}
-
-pub fn is_integer_type(ty: Ty) -> bool {
-    is_signed_int(ty.clone()) || is_unsigned_int(ty.clone())
-}
-
-pub fn int_conversion_rank(ty: Ty) -> usize {
-    match ty {
-        Ty::Int(_,w) => w,
-        Ty::Bool => 1,
-        _ => panic!("int_conversion_rank received a non-int type: {:#?}", ty),
-    }
-}
-
-pub fn _total_num_bits(ty: Ty) -> usize {
-    match ty {
-        Ty::Int(_,w) => w,
-        Ty::Bool => 1,
-        Ty::Array(s, t) => s.unwrap() * num_bits(*t),
-    }
-}
-
-pub fn num_bits(ty: Ty) -> usize {
-    match ty {
-        Ty::Int(_,w) => w,
-        Ty::Bool => 1,
-        Ty::Array(_, _) => 32,
-    }
-}
-
-pub fn inner_ty(ty: Ty) -> Ty {
-    match ty {
-        Ty::Int(_,_) => ty,
-        Ty::Bool => ty,
-        Ty::Array(_, t) => *t,
-=======
 impl Ty {
     fn sort(&self) -> Sort {
         match self {
@@ -291,6 +196,5 @@ impl Ty {
             Ty::Ptr(_, t) => *t,
             Ty::Struct(_, _) => unimplemented!("Struct does not have an inner type"),
         }
->>>>>>> 75572c6... C Frontend (#22)
     }
 }

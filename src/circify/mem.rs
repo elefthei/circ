@@ -124,11 +124,6 @@ impl MemManager {
         alloc.size
     }
 
-    /// Get size of the array at the allocation `id`
-    pub fn get_size(&self, id: AllocId) -> usize {
-        let alloc = self.allocs.get(&id).expect("Missing allocation");
-        alloc.size
-    }
 }
 #[cfg(all(feature = "smt", feature = "test", feature = "zok"))]
 mod test {

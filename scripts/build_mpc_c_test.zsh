@@ -24,10 +24,6 @@ function mpc_test {
     RUST_BACKTRACE=1 measure_time $BIN --parties $parties $cpath mpc --cost-model "hycc"
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 7693d30... Updates to C Frontend (#67)
 function mpc_test_2  {
     parties=$1
     cpath=$2
@@ -37,12 +33,6 @@ function mpc_test_2  {
 # mpc_test_2 2 ./examples/C/mpc/playground.c
 
 # build mpc arithmetic tests
-<<<<<<< HEAD
-=======
-# build arithmetic tests
->>>>>>> 8fed29b... ABY VM and Interpreter (#47)
-=======
->>>>>>> 7693d30... Updates to C Frontend (#67)
 mpc_test 2 ./examples/C/mpc/unit_tests/arithmetic_tests/2pc_add.c
 mpc_test 2 ./examples/C/mpc/unit_tests/arithmetic_tests/2pc_sub.c
 mpc_test 2 ./examples/C/mpc/unit_tests/arithmetic_tests/2pc_mult.c
@@ -100,10 +90,6 @@ mpc_test 2 ./examples/C/mpc/unit_tests/c_array_tests/2pc_array_2.c
 mpc_test 2 ./examples/C/mpc/unit_tests/c_array_tests/2pc_array_3.c
 mpc_test 2 ./examples/C/mpc/unit_tests/c_array_tests/2pc_array_sum_c.c
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 7693d30... Updates to C Frontend (#67)
 # build function tests
 mpc_test 2 ./examples/C/mpc/unit_tests/function_tests/2pc_function_add.c
 
@@ -119,7 +105,6 @@ mpc_test 2 ./examples/C/mpc/unit_tests/matrix_tests/2pc_matrix_ptr_add.c
 # build ptr tests
 mpc_test 2 ./examples/C/mpc/unit_tests/ptr_tests/2pc_ptr_add.c
 
-<<<<<<< HEAD
 # build misc tests
 mpc_test 2 ./examples/C/mpc/unit_tests/misc_tests/2pc_millionaires.c
 mpc_test 2 ./examples/C/mpc/unit_tests/misc_tests/2pc_multi_var.c
@@ -146,56 +131,3 @@ mpc_test 2 ./examples/C/mpc/benchmarks/kmeans/2pc_kmeans_og.c
 # # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_8.c
 # # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_9.c
 # # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench.c
-=======
-=======
->>>>>>> 7693d30... Updates to C Frontend (#67)
-# build misc tests
-mpc_test 2 ./examples/C/mpc/unit_tests/misc_tests/2pc_millionaires.c
-mpc_test 2 ./examples/C/mpc/unit_tests/misc_tests/2pc_multi_var.c
-
-# build hycc benchmarks
-<<<<<<< HEAD
-mpc_test 2 ./examples/C/mpc/benchmarks/2pc_kmeans.c
-mpc_test 2 ./examples/C/mpc/benchmarks/2pc_biomatch.c
-
-# # build shift tests
-# mpc_test 2 ./examples/C/mpc/unit_tests/shift_tests/2pc_lhs.c
-# mpc_test 2 ./examples/C/mpc/unit_tests/shift_tests/2pc_rhs.c
-
-# ilp benchmarks
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_1.c
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_2.c
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_3.c
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_4.c
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_5.c
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_6.c
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_7.c
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_8.c
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_9.c
-# mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench.c
-
-# mpc_test 2 ./examples/C/mpc/unit_tests/arithmetic_tests/2pc_loop_add.c
->>>>>>> 8fed29b... ABY VM and Interpreter (#47)
-=======
-mpc_test 2 ./examples/C/mpc/benchmarks/biomatch/2pc_biomatch.c
-mpc_test 2 ./examples/C/mpc/benchmarks/kmeans/2pc_kmeans.c
-mpc_test 2 ./examples/C/mpc/benchmarks/kmeans/2pc_kmeans_og.c
-# mpc_test_2 2 ./examples/C/mpc/benchmarks/db/db_join.c
-# mpc_test_2 2 ./examples/C/mpc/benchmarks/gauss/2pc_gauss.c
-# mpc_test_2 2 ./examples/C/mpc/benchmarks/mnist/2pc_mnist.c
-
-
-
-
-# # ilp benchmarks
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_1.c
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_2.c
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_3.c
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_4.c
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_5.c
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_6.c
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_7.c
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_8.c
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench_9.c
-# # mpc_test 2 ./examples/C/mpc/ilp_benchmarks/2pc_ilp_bench.c
->>>>>>> 7693d30... Updates to C Frontend (#67)

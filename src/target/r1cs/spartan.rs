@@ -2,11 +2,9 @@
 use libspartan::*;
 use crate::target::r1cs::*;
 use curve25519_dalek::scalar::Scalar;
-use rug::{Assign, Integer};
+use rug::{Integer};
 use core::clone::Clone;
-use core::ops::Shr;
 
-use log::debug;
 use std::collections::HashMap;
 use gmp_mpfr_sys::gmp::limb_t;
 use lazy_static::lazy_static;
@@ -19,13 +17,11 @@ lazy_static! {
 
 }
 
-
 #[derive(Debug)]
 pub struct Variable {
     sid: usize,
     value: [u8; 32],
 }
-
 
 // circ R1cs -> spartan R1CSInstance
 pub fn r1cs_to_spartan<S: Eq + Hash + Clone + Display>(r1cs: R1cs<S>) -> (Instance, Assignment, Assignment, usize, usize, usize)
@@ -42,7 +38,7 @@ pub fn r1cs_to_spartan<S: Eq + Hash + Clone + Display>(r1cs: R1cs<S>) -> (Instan
 
     // TODO if not input?
     match r1cs.values {
-	Some(_) => 
+	Some(_) =>
 	    for (k,v) in r1cs.values.as_ref().unwrap() { // CirC id, Integer
 
 		let mut name = r1cs.idxs_signals.get(k).unwrap().to_string();
@@ -59,19 +55,19 @@ pub fn r1cs_to_spartan<S: Eq + Hash + Clone + Display>(r1cs: R1cs<S>) -> (Instan
 		} else if name.contains("main_f0_lex0_"){
 		    // input
 		    //println!("As input: {}", name);
-	
+
                     itrans.insert(*k, inp.len());
                     inp.push(scalar.to_bytes());
-	
+
 		} else {
 		    // witness
                     //println!("As witness: {}", name);
-		    
+
 		    trans.insert(*k, wit.len());
                     wit.push(scalar.to_bytes());
 
 		}
-	
+
 	    }
 	None 	=> panic!("Tried to run Spartan without inputs/witness"),
     }
@@ -84,7 +80,7 @@ pub fn r1cs_to_spartan<S: Eq + Hash + Clone + Display>(r1cs: R1cs<S>) -> (Instan
     let assn_witness = VarsAssignment::new(&wit).unwrap();
 
     let num_inputs = inp.len();
-    let assn_inputs = InputsAssignment::new(&inp).unwrap();    
+    let assn_inputs = InputsAssignment::new(&inp).unwrap();
 
     //drop inp and wit vecs
     inp = Vec::new();
@@ -115,7 +111,7 @@ pub fn r1cs_to_spartan<S: Eq + Hash + Clone + Display>(r1cs: R1cs<S>) -> (Instan
         for Variable { sid, value } in a {
             A.push((i, sid, value));
 	}
-	for Variable { sid, value } in b { 
+	for Variable { sid, value } in b {
   	    B.push((i, sid, value));
 	}
 	for Variable { sid, value } in c {
@@ -126,7 +122,7 @@ pub fn r1cs_to_spartan<S: Eq + Hash + Clone + Display>(r1cs: R1cs<S>) -> (Instan
 
     }
 
-    
+
     let num_cons = i;
     let inst = Instance::new(num_cons, num_vars, num_inputs, &A, &B, &C).unwrap();
 
@@ -146,7 +142,7 @@ fn int_to_scalar(i: &Integer) -> Scalar {
     let two: u64 = 2;
     let mut m = Scalar::from(two.pow(63) as u64);
     m = m * Scalar::from(2 as u64);
-    //println!("in int2scal i={:#?}", i); 
+    //println!("in int2scal i={:#?}", i);
 
     // as_ref yeilds a least-significant-first array.
     for digit in i.as_ref().iter().rev() {
@@ -154,7 +150,7 @@ fn int_to_scalar(i: &Integer) -> Scalar {
         accumulator *= m;
         accumulator += Scalar::from(*digit as u64);
     }
-    return accumulator; 
+    return accumulator;
 
 }
 

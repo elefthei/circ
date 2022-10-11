@@ -4,11 +4,7 @@
 //! Inv gates need to typecast circuit object to boolean circuit
 //! [Link to comment in EzPC Compiler](https://github.com/mpc-msri/EzPC/blob/da94a982709123c8186d27c9c93e27f243d85f0e/EzPC/EzPC/codegen.ml)
 
-<<<<<<< HEAD
-use std::fmt;
-=======
 use crate::ir::opt::cfold::fold;
->>>>>>> 7693d30... Updates to C Frontend (#67)
 use crate::ir::term::*;
 #[cfg(feature = "lp")]
 use crate::target::aby::assignment::ilp::assign;
@@ -94,86 +90,13 @@ impl ToABY {
         }
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    fn add_conv_gate(&self, p_t: Term, c_t: Term, c_circ: String) -> String {
-        let p_share = self.s_map.get(&p_t).unwrap();
-        let c_share = self.s_map.get(&c_t).unwrap();
-
-        match (c_share, p_share) {
-            (ShareType::Arithmetic, ShareType::Arithmetic) => c_circ,
-            (ShareType::Boolean, ShareType::Boolean) => c_circ,
-            (ShareType::Yao, ShareType::Yao) => c_circ,
-            (ShareType::Arithmetic, ShareType::Boolean) => {
-                format!("bcirc->PutY2BGate(ycirc->PutA2YGate({}))", c_circ)
-            }
-            (ShareType::Arithmetic, ShareType::Yao) => format!("ycirc->PutA2YGate({})", c_circ),
-            (ShareType::Boolean, ShareType::Arithmetic) => format!("acirc->PutB2AGate({})", c_circ),
-            (ShareType::Boolean, ShareType::Yao) => format!("ycirc->PutB2YGate({})", c_circ),
-            (ShareType::Yao, ShareType::Arithmetic) => {
-                format!("acirc->PutB2AGate(bcirc->PutY2BGate({}))", c_circ)
-            }
-            (ShareType::Yao, ShareType::Boolean) => format!("bcirc->PutY2BGate({})", c_circ),
-        }
-    }
-
-    fn add_cons_gate(&self, t: Term) -> String {
-        let name = ToABY::get_var_name(t.clone(), true);
-        let s_circ = self.get_sharetype_circ(t);
-        format!(
-            "s_{} = {}->PutCONSGate((uint32_t){}, bitlen);\n",
-            name, s_circ, name
-        )
-    }
-
-    fn add_in_gate(&self, t: Term, role: String) -> String {
-        let name = ToABY::get_var_name(t.clone(), true);
-        let s_circ = self.get_sharetype_circ(t);
-        format!(
-            "\ts_{} = {}->PutINGate({}, bitlen, {});\n",
-            name, s_circ, name, role
-        )
-    }
-
-    fn add_dummy_gate(&self, t: Term) -> String {
-        let name = ToABY::get_var_name(t.clone(), true);
-        let s_circ = self.get_sharetype_circ(t);
-        format!("\ts_{} = {}->PutDummyINGate(bitlen);\n", name, s_circ)
-    }
-
-    /// Initialize private and public inputs from each party
-    /// Party inputs are stored in *self.inputs*
-    fn init_inputs(&mut self) {
-        let mut server_inputs = TermSet::new();
-        let mut client_inputs = TermSet::new();
-        let mut public_inputs = TermSet::new();
-
-
-        // Parse input parameters from command line as uint32_t variables
-        // Initialize shares for each party
-        for (t, party) in self.inputs.iter() {
-            let name = ToABY::get_var_name(t.clone(), false);
-            let name_ = ToABY::get_var_name(t.clone(), true);
-
-=======
-    fn write_mapping_file(&self, term_: Term) {
-=======
     fn write_mapping_file(&mut self, term_: Term) {
->>>>>>> 13f9a09... Updated ABY VM to include `IN` bytecode instruction (#65)
         for t in PostOrderIter::new(term_) {
             let share_type = self.s_map.get(&t).unwrap();
             let share_str = share_type.char();
             let share_cnt = self.term_to_share_cnt.get(&t).unwrap();
-<<<<<<< HEAD
->>>>>>> 8fed29b... ABY VM and Interpreter (#47)
-            write_line_to_file(
-                &self.share_map_path,
-                &format!("{} {}\n", *share_cnt, share_str),
-            );
-=======
             let line = format!("{} {}\n", *share_cnt, share_str);
             self.share_map_output.push(line);
->>>>>>> 13f9a09... Updated ABY VM to include `IN` bytecode instruction (#65)
         }
     }
 
@@ -457,12 +380,6 @@ impl ToABY {
                 let line = format!("2 1 {} {} {} {}\n", a, b, s, op);
                 self.bytecode_output.push(line);
 
-                self.cache.insert(
-                    t.clone(),
-                    EmbeddedTerm::Bv(share),
-                );
-                write_line_to_file(&self.circuit_fname, &s);
-
                 self.cache.insert(t.clone(), EmbeddedTerm::Bv(share));
             }
             Op::BvBinOp(o) => {
@@ -509,30 +426,8 @@ impl ToABY {
         }
     }
 
-<<<<<<< HEAD
-    /// Given a Circuit `circ`, wrap `circ` in an OUT gate to extract the value of
-    /// the circuit to a share
-    ///
-    /// Return a String of the resulting Circuit
-    fn format_output_circuit(&self, t: Term) -> String {
-        match self.cache.get(&t) {
-            Some(EmbeddedTerm::Bool(s)) | Some(EmbeddedTerm::Bv(s)) => {
-                format!(
-                    "add_to_output_queue(out_q, {}->PutOUTGate({}, ALL), role, std::cout);\n",
-                    self.get_sharetype_circ(t),
-                    s
-                )
-            }
-            None => panic!("Term not found in cache: {:#?}", t),
-        }
-    }
-
-    fn embed(&mut self, t: Term) -> String {
-        for c in PostOrderIter::new(t.clone()) {
-=======
     fn embed(&mut self, t: Term) {
         for c in PostOrderIter::new(t) {
->>>>>>> 8fed29b... ABY VM and Interpreter (#47)
             match check(&c) {
                 Sort::Bool => {
                     self.embed_bool(c);

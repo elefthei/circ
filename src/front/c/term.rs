@@ -1,20 +1,8 @@
 //! C Terms
-<<<<<<< HEAD
-use crate::circify::{CirCtx, Embeddable};
-use crate::circify::mem::AllocId;
-use crate::front::c::is_signed_int;
-use crate::front::c::Circify;
-use crate::front::c::types::*;
-=======
 use crate::circify::mem::AllocId;
 use crate::circify::{CirCtx, Embeddable, Typed};
 use crate::front::c::types::*;
-<<<<<<< HEAD
-use crate::front::c::Circify;
->>>>>>> 75572c6... C Frontend (#22)
-=======
 use crate::front::field_list::FieldList;
->>>>>>> 7693d30... Updates to C Frontend (#67)
 use crate::ir::term::*;
 use rug::Integer;
 use std::fmt::{self, Display, Formatter};
@@ -34,19 +22,9 @@ impl CTermData {
         match self {
             Self::CBool(_) => Ty::Bool,
             Self::CInt(s, w, _) => Ty::Int(*s, *w),
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Self::CArray(b, _) => {
-                Ty::Array(None, Box::new(b.clone()))
-            },
-=======
-            Self::CArray(b, _) => Ty::Array(None, Box::new(b.clone())),
->>>>>>> 75572c6... C Frontend (#22)
-=======
             Self::CArray(t, _) => t.clone(),
             Self::CStackPtr(t, _o, _) => t.clone(),
             Self::CStruct(ty, _) => ty.clone(),
->>>>>>> 7693d30... Updates to C Frontend (#67)
         }
     }
     /// Get all IR terms inside this value, as a list.
@@ -103,27 +81,6 @@ impl CTermData {
             _ => panic!(),
         }
     }
-<<<<<<< HEAD
-    pub fn term(&self, circ: &Circify<Ct>) -> Term {
-        match self {
-            CTermData::CBool(b) => b.clone(),
-            CTermData::CInt(_, _, b) => b.clone(),
-<<<<<<< HEAD
-            CTermData::CArray(_,b) => {
-                // TODO: load all of the array
-                let i = b.unwrap_or_else(|| panic!("Unknown AllocID: {:#?}", self));
-                circ.load(i, bv_lit(0,64))
-            },
-=======
-            CTermData::CArray(_, b) => {
-                // TODO: load all of the array
-                let i = b.unwrap_or_else(|| panic!("Unknown AllocID: {:#?}", self));
-                circ.load(i, bv_lit(0, 32))
-            }
->>>>>>> 75572c6... C Frontend (#22)
-        }
-    }
-=======
 
     // pub fn term(&self, circ: &Circify<Ct>) -> Term {
     //     match self {
@@ -136,7 +93,6 @@ impl CTermData {
     //         }
     //     }
     // }
->>>>>>> 7693d30... Updates to C Frontend (#67)
 }
 
 impl Display for CTermData {
@@ -169,30 +125,10 @@ impl Display for CTerm {
     }
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-pub fn cast(to_ty: Option<Ty>, t: CTerm) -> CTerm {
-    let ty = t.term.type_();
-    match t.term {
-        CTermData::CBool(ref term) => {
-            match to_ty {
-                Some(Ty::Int(s,w)) => {
-                    CTerm {
-                        term: CTermData::CInt(s, w, term![Op::Not; term![Op::Eq; bv_lit(0, w), term.clone()]]),
-                        udef: t.udef,
-                    }
-                }
-                Some(Ty::Bool) => t.clone(),
-                _ => panic!("Bad cast from {} to {:?}", ty, to_ty),
-            }
-        }
-=======
-=======
 fn field_name(struct_name: &str, field_name: &str) -> String {
     format!("{}.{}", struct_name, field_name)
 }
 
->>>>>>> 7693d30... Updates to C Frontend (#67)
 pub fn cterm(data: CTermData) -> CTerm {
     CTerm {
         term: data,
@@ -239,23 +175,11 @@ pub fn cast(to_ty: Option<Ty>, t: CTerm) -> CTerm {
             Some(Ty::Bool) => t.clone(),
             _ => panic!("Bad cast from {} to {:?}", ty, to_ty),
         },
-<<<<<<< HEAD
->>>>>>> 75572c6... C Frontend (#22)
-        CTermData::CInt(_, w, ref term) => match to_ty {
-=======
         CTermData::CInt(_s, w, ref term) => match to_ty {
->>>>>>> 7693d30... Updates to C Frontend (#67)
             Some(Ty::Bool) => CTerm {
                 term: CTermData::CBool(term![Op::Not; term![Op::Eq; bv_lit(0, w), term.clone()]]),
                 udef: t.udef,
             },
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Some(Ty::Int(_,_)) => t.clone(),
-=======
-            Some(Ty::Int(_, _)) => t.clone(),
->>>>>>> 75572c6... C Frontend (#22)
-=======
             Some(Ty::Int(to_s, to_w)) => {
                 // TODO: add udef check
                 // TODO: add int resize
@@ -265,7 +189,6 @@ pub fn cast(to_ty: Option<Ty>, t: CTerm) -> CTerm {
                     udef: t.udef,
                 }
             }
->>>>>>> 7693d30... Updates to C Frontend (#67)
             _ => panic!("Bad cast from {} to {:?}", ty, to_ty),
         },
         CTermData::CArray(ref ty, id) => match to_ty {
@@ -290,39 +213,13 @@ pub fn cast(to_ty: Option<Ty>, t: CTerm) -> CTerm {
                 udef: t.udef,
             },
             _ => panic!("Bad cast from {:#?} to {:?}", ty, to_ty),
-<<<<<<< HEAD
         },
-=======
-        },
->>>>>>> 75572c6... C Frontend (#22)
     }
 }
 
 /// Implementation of integer promotion (C11, 6.3.1.1.3)
 fn int_promotion(t: &CTerm) -> CTerm {
     let ty = t.term.type_();
-<<<<<<< HEAD
-    if (is_integer_type(ty.clone()) || Ty::Bool == ty) && int_conversion_rank(ty) < 64 {
-        match &t.term {
-            // "If an int can represent all values ... converted to an int ...
-            // otherwise an unsigned int"
-            CTermData::CInt(s,w,v) => {
-                let width = w - if *s { 1 } else { 0 };
-                let max_val: u64 = u64::pow(2u64, width as u32) - 1;
-                let signed = max_val < u64::pow(2u64, 63u32) - 1; // 31/63 ... correct?
-                CTerm {
-                    term: CTermData::CInt(signed, 64, v.clone()),
-                    udef: t.udef,
-                }
-            }
-            CTermData::CBool(v) => {
-                CTerm {
-                    term: CTermData::CInt(false, 64, v.clone()),
-                    udef: t.udef,
-                }
-            }
-            _ => t.clone()
-=======
     if (ty.is_integer_type() || Ty::Bool == ty) && ty.int_conversion_rank() < 32 {
         match &t.term {
             // "If an int can represent all values ... converted to an int ...
@@ -341,7 +238,6 @@ fn int_promotion(t: &CTerm) -> CTerm {
                 udef: t.udef,
             },
             _ => t.clone(),
->>>>>>> 75572c6... C Frontend (#22)
         }
     } else {
         t.clone()
@@ -355,24 +251,6 @@ fn inner_usual_arith_conversions(a: &CTerm, b: &CTerm) -> (CTerm, CTerm) {
     let b_prom_ty = b_prom.term.type_();
 
     if a_prom_ty == b_prom_ty {
-<<<<<<< HEAD
-        return (a_prom, b_prom);
-    } else if is_signed_int(a_prom_ty.clone()) == is_signed_int(b_prom_ty.clone()) {
-        if int_conversion_rank(a_prom_ty.clone()) < int_conversion_rank(b_prom_ty.clone()) {
-            return (cast(Some(b_prom_ty), a_prom), b_prom);
-        } else {
-            return (a_prom, cast(Some(a_prom_ty), b_prom))
-        }
-    } else {
-
-    }
-
-    unimplemented!("Not implemented case in iUAC");
-}
-
-fn usual_arith_conversions(a: CTerm, b: CTerm) -> (CTerm, CTerm) {
-    if is_arith_type(&a) && is_arith_type(&b) {
-=======
         (a_prom, b_prom)
     } else if a_prom_ty.is_signed_int() == b_prom_ty.is_signed_int() {
         if a_prom_ty.int_conversion_rank() < b_prom_ty.int_conversion_rank() {
@@ -407,7 +285,6 @@ fn usual_arith_conversions(a: CTerm, b: CTerm) -> (CTerm, CTerm) {
 
 fn usual_arith_conversions(a: CTerm, b: CTerm) -> (CTerm, CTerm) {
     if a.term.type_().is_arith_type() && b.term.type_().is_arith_type() {
->>>>>>> 75572c6... C Frontend (#22)
         let (a_, b_) = inner_usual_arith_conversions(&a, &b);
         if a_.term.type_() == b_.term.type_() {
             (a_, b_)
@@ -436,11 +313,7 @@ fn wrap_bin_arith(
                 term: CTermData::CInt(sx && sy, nx, fu(x, y)),
                 udef: false,
             })
-<<<<<<< HEAD
-        },
-=======
         }
->>>>>>> 75572c6... C Frontend (#22)
         (CTermData::CBool(x), CTermData::CBool(y), _, Some(fb)) => Ok(CTerm {
             term: CTermData::CBool(fb(x, y)),
             udef: false,
@@ -567,19 +440,12 @@ fn wrap_bin_cmp(
 ) -> Result<CTerm, String> {
     let (a_arith, b_arith) = usual_arith_conversions(a, b);
     match (a_arith.term, b_arith.term, fu, fb) {
-<<<<<<< HEAD
-        (CTermData::CInt(_, nx, x), CTermData::CInt(_, ny, y), Some(fu), _) if nx == ny => Ok(CTerm {
-            term: CTermData::CBool(fu(x, y)),
-            udef: false,
-        }),
-=======
         (CTermData::CInt(_, nx, x), CTermData::CInt(_, ny, y), Some(fu), _) if nx == ny => {
             Ok(CTerm {
                 term: CTermData::CBool(fu(x, y)),
                 udef: false,
             })
         }
->>>>>>> 75572c6... C Frontend (#22)
         (CTermData::CBool(x), CTermData::CBool(y), _, Some(fb)) => Ok(CTerm {
             term: CTermData::CBool(fb(x, y)),
             udef: false,
@@ -639,9 +505,6 @@ pub fn uge(a: CTerm, b: CTerm) -> Result<CTerm, String> {
 pub fn const_int(a: CTerm) -> Integer {
     let s = match &a.term {
         CTermData::CInt(s, _, i) => match &i.op {
-<<<<<<< HEAD
-            Op::Const(Value::BitVector(f)) => if *s { Some(f.as_sint().clone()) } else { Some(f.uint().clone()) },
-=======
             Op::Const(Value::BitVector(f)) => {
                 if *s {
                     f.as_sint()
@@ -649,14 +512,9 @@ pub fn const_int(a: CTerm) -> Integer {
                     f.uint().clone()
                 }
             }
-<<<<<<< HEAD
->>>>>>> 75572c6... C Frontend (#22)
-            _ => None,
-=======
             _ => {
                 panic!("Expected a constant integer")
             }
->>>>>>> 7693d30... Updates to C Frontend (#67)
         },
         _ => panic!("Not CInt"),
     };
@@ -667,15 +525,7 @@ fn wrap_shift(name: &str, op: BvBinOp, a: CTerm, b: CTerm) -> Result<CTerm, Stri
     let bc = const_int(b);
     match &a.term {
         CTermData::CInt(s, na, a) => Ok(CTerm {
-<<<<<<< HEAD
-            term: CTermData::CInt(
-                *s,
-                *na,
-                term![Op::BvBinOp(op); a.clone(), bv_lit(bc, *na)]
-            ),
-=======
             term: CTermData::CInt(*s, *na, term![Op::BvBinOp(op); a.clone(), bv_lit(bc, *na)]),
->>>>>>> 75572c6... C Frontend (#22)
             udef: false,
         }),
         x => Err(format!("Cannot perform op '{}' on {} and {}", name, x, bc)),
@@ -731,11 +581,7 @@ impl Embeddable for Ct {
             },
             Ty::Int(s, w) => Self::T {
                 term: CTermData::CInt(
-<<<<<<< HEAD
                     *s,
-=======
-                    *s,
->>>>>>> 75572c6... C Frontend (#22)
                     *w,
                     ctx.cs.borrow_mut().new_var(
                         &name,
@@ -748,68 +594,22 @@ impl Embeddable for Ct {
             },
             Ty::Array(n, _, ty) => {
                 assert!(precompute.is_none());
-<<<<<<< HEAD
-                let v: Vec<Self::T> = (0..n.unwrap())
-<<<<<<< HEAD
-                    .map(|i| {
-                        self.declare(
-                            ctx,
-                            &*ty,
-                            idx_name(&raw_name, i),
-                            user_name.as_ref().map(|u| idx_name(u, i)),
-<<<<<<< HEAD
-                            visibility.clone(),
-=======
-                            visibility,
->>>>>>> 75572c6... C Frontend (#22)
-                        )
-                    })
-=======
-=======
                 let v: Vec<Self::T> = (0..*n)
-<<<<<<< HEAD
->>>>>>> 7693d30... Updates to C Frontend (#67)
-                    .map(|i| self.declare_input(ctx, &*ty, idx_name(&name, i), visibility, None))
->>>>>>> c129346... Precomputations (or, as-known-for-proofs, witness extension) (#80)
-=======
                     .map(|i| self.declare_input(ctx, ty, idx_name(&name, i), visibility, None))
->>>>>>> 15eadb6... Fix Linter Warnings (#103)
                     .collect();
                 let mut mem = ctx.mem.borrow_mut();
-<<<<<<< HEAD
-<<<<<<< HEAD
-                let id = mem.zero_allocate(n.unwrap(), 64, num_bits(*ty.clone()));
-                let arr = Self::T {
-                    term: CTermData::CArray(
-                        *ty.clone(),
-                        Some(id),
-                    ),
-=======
-                let id = mem.zero_allocate(n.unwrap(), 32, ty.num_bits());
-=======
                 let id = mem.zero_allocate(*n, 32, ty.num_bits());
->>>>>>> 7693d30... Updates to C Frontend (#67)
                 let arr = Self::T {
                     term: CTermData::CArray(*ty.clone(), Some(id)),
->>>>>>> 75572c6... C Frontend (#22)
                     udef: false,
                 };
                 for (i, t) in v.iter().enumerate() {
                     let val = t.term.term(ctx);
                     let t_term = leaf_term(Op::Const(Value::Bool(true)));
-<<<<<<< HEAD
-                    mem.store(id, bv_lit(i, 64), val, t_term);
-                }
-                arr
-            },
-=======
                     mem.store(id, bv_lit(i, 32), val, t_term);
                 }
                 arr
             }
-<<<<<<< HEAD
->>>>>>> 75572c6... C Frontend (#22)
-=======
             Ty::Struct(n, fs) => {
                 let fields: Vec<(String, CTerm)> = fs
                     .fields()
@@ -833,7 +633,6 @@ impl Embeddable for Ct {
                 ))
             }
             _ => unimplemented!("Unimplemented declare: {}", ty),
->>>>>>> 7693d30... Updates to C Frontend (#67)
         }
     }
     fn ite(&self, _ctx: &mut CirCtx, cond: Term, t: Self::T, f: Self::T) -> Self::T {

@@ -527,60 +527,11 @@ impl CGen {
         }
     }
 
-<<<<<<< HEAD
-    fn derived_type_(&mut self, base_ty: Ty, derived: Vec<Node<DerivedDeclarator>>) -> Ty {
-        if derived.is_empty() {
-            return base_ty;
-        }
-        let mut derived_ty = base_ty.clone();
-        for d in derived {
-            let next_ty = self.inner_derived_type_(base_ty.clone(), d.node.clone());
-            match derived_ty {
-                Ty::Array(s, _) => derived_ty = Ty::Array(s, Box::new(next_ty)),
-                _ => derived_ty = next_ty,
-            }
-        }
-        derived_ty
-    }
-
-    /// Interpret the party association of input parameters
-    pub fn interpret_visibility(&mut self, ext: &DeclarationSpecifier) -> Option<PartyId> {
-        if let DeclarationSpecifier::Extension(nodes) = ext {
-            assert!(nodes.len() == 1);
-            let node = nodes.first().unwrap();
-            if let Extension::Attribute(attr) = &node.node {
-                let name = &attr.name;
-                return match name.node.as_str() {
-                    "public" => PUBLIC_VIS,
-                    "private" => match self.mode {
-                        Mode::Mpc(n_parties) => {
-                            assert!(attr.arguments.len() == 1);
-                            let arg = attr.arguments.first().unwrap();
-                            let cons = self.gen_expr(arg.node.clone());
-                            let num_val = const_int(cons).ok()?;
-                            if num_val <= n_parties {
-                                Some(num_val.to_u8()?)
-                            } else {
-                                self.err(format!(
-                                    "Party number {} greater than the number of parties ({})",
-                                    num_val, n_parties
-                                ))
-                            }
-                        }
-                        _ => unimplemented!("Mode {} is not supported.", self.mode),
-                    },
-                    _ => panic!("Unknown visibility: {:#?}", name),
-                };
-            }
-        }
-        panic!("Bad visibility declaration.");
-=======
     fn fold_(&mut self, expr: CTerm) -> i32 {
         let term_ = fold(&expr.term.term(self.circ.cir_ctx()), &[]);
         let cterm_ = cterm(CTermData::CInt(true, 32, term_));
         let val = const_int(cterm_);
         val.to_i32().unwrap()
->>>>>>> 7693d30... Updates to C Frontend (#67)
     }
 
     fn const_(&self, c: Constant) -> CTerm {
@@ -615,8 +566,8 @@ impl CGen {
             BinaryOperator::LogicalAnd => and,
             BinaryOperator::LogicalOr => or,
             BinaryOperator::Modulo => rem,
-            BinaryOperator::ShiftLeft=> shl,
-            BinaryOperator::ShiftRight=> shr,
+            BinaryOperator::ShiftLeft => shl,
+            BinaryOperator::ShiftRight => shr,
             _ => unimplemented!("BinaryOperator {:#?} hasn't been implemented", op),
         }
     }
@@ -699,12 +650,6 @@ impl CGen {
                         self.gen_assign(loc, val)
                     }
                     BinaryOperator::Index => {
-<<<<<<< HEAD
-                        let a = self.gen_expr(bin_op.lhs.node);
-                        let b = self.gen_expr(bin_op.rhs.node);
-
-                        self.array_select(a, b)
-=======
                         let index = self.gen_index(expr);
                         let offset = self.index_offset(&index);
                         match index.base.term {
@@ -734,7 +679,6 @@ impl CGen {
                             _ => self
                                 .array_select(index.base, cterm(CTermData::CInt(true, 32, offset))),
                         }
->>>>>>> 7693d30... Updates to C Frontend (#67)
                     }
                     _ => {
                         let f = self.get_bin_op(bin_op.operator.node.clone());
@@ -1001,16 +945,9 @@ impl CGen {
         let cond_ = cond.unwrap();
         let incr_ = step.unwrap();
 
-<<<<<<< HEAD
-
-        let start = init_.val;
-        let end = cond_.val;
-        let incr = incr_.val;
-=======
         let start: f32 = init_.val as f32;
         let end: f32 = cond_.val as f32;
         let incr: f32 = incr_.val as f32;
->>>>>>> 7693d30... Updates to C Frontend (#67)
 
         ConstIteration {
             val: ((end - start) / incr).ceil() as i32,
@@ -1179,47 +1116,9 @@ impl CGen {
                     self.gen_decl(decl.node.clone());
                 }
                 ExternalDeclaration::FunctionDefinition(ref fn_def) => {
-<<<<<<< HEAD
-                    let fn_info = ast_utils::get_fn_info(&fn_def.node);
-                    self.circ
-                        .enter_fn(fn_info.name.to_owned(), fn_info.ret_ty.clone());
-                    for arg in fn_info.args.iter() {
-                        // TODO: self.gen_decl(arg);
-                        let p = &arg.specifiers[0];
-                        let vis = self.interpret_visibility(&p.node);
-                        let base_ty = d_type_(arg.specifiers[1..].to_vec());
-                        let d = &arg.declarator.as_ref().unwrap().node;
-                        let derived_ty = self.derived_type_(base_ty.unwrap(), d.derived.to_vec());
-                        let name = name_from_decl(d);
-                        let res = self.circ.declare(name.clone(), &derived_ty, true, vis);
-                        self.unwrap(res);
-                    }
-                    self.gen_stmt(fn_info.body.clone());
-                    if let Some(r) = self.circ.exit_fn() {
-                        match self.mode {
-                            Mode::Mpc(_) => {
-                                let ret_term = r.unwrap_term();
-                                let ret_terms = ret_term.term.terms();
-                                self.circ
-                                    .cir_ctx()
-                                    .cs
-                                    .borrow_mut()
-                                    .outputs
-                                    .extend(ret_terms);
-                            }
-                            Mode::Proof => {
-                                let ty = fn_info.ret_ty.as_ref().unwrap();
-                                let name = "return".to_owned();
-                                let term = r.unwrap_term();
-                            }
-                            _ => unimplemented!("Mode: {}", self.mode),
-                        }
-                    }
-=======
                     let fn_info = self.get_fn_info(&fn_def.node);
                     let fname = fn_info.name.clone();
                     self.functions.insert(fname, fn_info);
->>>>>>> 7693d30... Updates to C Frontend (#67)
                 }
                 _ => unimplemented!("Haven't implemented node: {:?}", n.node),
             };
